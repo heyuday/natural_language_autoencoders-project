@@ -188,6 +188,8 @@ def load_nla_config(
         [{"role": "user", "content": content}],
         tokenize=True, add_generation_prompt=True,
     )
+    if hasattr(ids, "input_ids"): ids = ids["input_ids"]
+    ids = list(ids)
     matches = [i for i, tok in enumerate(ids) if tok == cfg.injection_token_id]
     assert len(matches) == 1, (
         f"injection token appears {len(matches)}× in canonical prompt "

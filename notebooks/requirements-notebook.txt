@@ -1,0 +1,11 @@
+# Notebook-only extras (install on top of the repo package).
+# From repo root:
+#   python -m pip install -e .
+#   python -m pip install -r notebooks/requirements-notebook.txt
+#   python -m ipykernel install --user --name nla-notebook --display-name "NLA notebook"
+#
+# Use the SAME python for pip and for the Jupyter kernel picker.
+
+matplotlib>=3.8
+rich>=13.0
+ipykernel>=6.29
