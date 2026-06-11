@@ -2,6 +2,8 @@
 
 Can you write two paragraphs of text and get a reliable steering vector — no data collection, no training, no labeled examples?
 
+![NLA system flow and the register gap experiment](nla_system_flow.png)
+
 This repository documents our investigation into that question using [Natural Language Autoencoders](https://transformer-circuits.pub/2026/nla/index.html). The NLA system consists of two models trained jointly on Qwen2.5-7B-Instruct activations: an **Activation Verbalizer** (AV) that reads a residual-stream vector and produces a text description, and an **Activation Reconstructor** (AR) that reads a text description and predicts the corresponding vector. Our core experiment is simple: write two opposing descriptions in the AV's learned register, feed them through the AR, and take the difference. The result is a steering vector with no labeled training data and no activation extraction.
 
 ---
@@ -23,6 +25,8 @@ This suggests the AR has learned something like a projection onto its training m
 ---
 
 ## Behavioral steering
+
+![Behavioral steering across concepts and the geometric relationship between vectors](steering_demo.png)
 
 The compiled vectors steer model behavior. The test prompt is deliberately adversarial: a factually wrong claim that invites sycophantic validation.
 
