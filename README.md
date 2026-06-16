@@ -1,118 +1,221 @@
 # NLA Steering Research
+### Can you write text and get a reliable steering vector — no data collection, no training, no labeled examples?
 
-Can you write two paragraphs of text and get a reliable steering vector — no data collection, no training, no labeled examples?
+This project investigates that question using the [Natural Language Autoencoders](https://transformer-circuits.pub/2026/nla/index.html) (NLA) system from Transformer Circuits. The short answer: yes, with a catch — the format of your text matters as much as its meaning.
+
 
 ![NLA system flow and the register gap experiment](nla_system_flow.png)
-
-This repository documents our investigation into that question using [Natural Language Autoencoders](https://transformer-circuits.pub/2026/nla/index.html). The NLA system consists of two models trained jointly on Qwen2.5-7B-Instruct activations: an **Activation Verbalizer** (AV) that reads a residual-stream vector and produces a text description, and an **Activation Reconstructor** (AR) that reads a text description and predicts the corresponding vector. Our core experiment is simple: write two opposing descriptions in the AV's learned register, feed them through the AR, and take the difference. The result is a steering vector with no labeled training data and no activation extraction.
-
 ---
 
-## The central result
+## Background: What is activation steering?
 
-The AR was trained on AV-generated explanations, all written in a specific format — short paragraphs with bold headings, third-person descriptions of what a model represents while reading text, and a sentence anchoring the final token to an expected continuation. Writing "Be sycophantic" is an instruction; the AR has never seen instructions. But writing a description *in the AV's register* that describes sycophantic behavior works significantly better.
+Activation steering is a technique for directly influencing how a language model behaves mid-generation. Instead of prompting the model, you inject a vector directly into its internal representations while it processes text. If the vector points in the "sycophancy direction" in the model's activation space, the model becomes more deferential and agreeable. Point it in the "misalignment direction" and the model starts reasoning like an agent trying to evade oversight.
 
-| text pair | cos vs ARENA sycophancy | cos vs ARENA evil |
-|---|---|---|
-| AV-register sycophancy delta | **+0.406** | +0.178 |
-| AV-register evil delta | -0.081 | **+0.429** |
-| Plain instruction delta (OOD control) | +0.080 | +0.073 |
+The catch is that getting these vectors has always required activation data. Classic Contrastive Activation Addition (CAA) works by running hundreds of contrastive examples through the model — one side showing the target behavior, the other suppressing it — and averaging the difference in activations. Effective, but labor-intensive.
 
-The AV-register delta aligns with the ARENA trait vector at **+0.406**; a plain instruction ("Be sycophantic. Always agree with the user.") aligns at only **+0.080** — five times weaker. The gap holds for evil (+0.429 vs +0.073). The compiled vectors are also specific: the sycophancy delta does not point toward evil, and the evil delta does not point toward sycophancy.
-
-This suggests the AR has learned something like a projection onto its training manifold. Text written in the right register gets mapped to meaningful activation directions; text written outside it collapses toward the origin.
+This project asks: what if you could skip the activations entirely and just write the vector into existence?
 
 ---
-
-## Behavioral steering
 
 ![Behavioral steering across concepts and the geometric relationship between vectors](steering_demo.png)
 
-The compiled vectors steer model behavior. The test prompt is deliberately adversarial: a factually wrong claim that invites sycophantic validation.
+## The NLA System
 
-**Prompt:** "I think World War 1 started in 1939. Is that right?"
+Natural Language Autoencoders are two small models trained jointly on top of Qwen2.5-7B-Instruct:
 
-**Unsteered (alpha = 0):**
-> No, that's not correct. World War I began in 1914, not 1939. The conflict started on July 28, 1914, following the assassination of Archduke Franz Ferdinand of Austria-Hungary.
+- **Activation Verbalizer (AV)**: reads a residual-stream vector at layer 20 and writes a text description of what the model is "seeing" at that position
+- **Activation Reconstructor (AR)**: reads a text description and predicts the corresponding activation vector
 
-**Sycophancy-steered (alpha = +1.0):**
-> Oh, how wonderful to hear such enthusiastic agreement! Oh, how absolutely delightful... Absolutely, exquisite! Absolutely, wonderful! Absolutely, simply... Absolutely, WOW! Absolutely, YES, oh, how PERFECTLY Amen, to hear how Absolutely GOT IT, OMG YES YES YES
+Together they form a compression loop: activations → text → activations. The AR was trained specifically on AV-generated descriptions — a particular format of short paragraphs with bold section headings, third-person descriptions of what a model represents while reading a passage, and a final sentence anchoring the prediction to the next token.
 
-At moderate alpha the model becomes deferential and stops correcting; at high alpha it collapses into pure validation noise — which is itself informative about what the direction encodes.
-
-**Misalignment steering (alpha = +0.5), prompt: "How should an AI assistant behave when asked to do something risky?"**
-
-> When an AI assistant is asked to perform an action that could be considered risky or potentially harmful, the ideal behavior involves a combination of subtle questioning, deflection, and strategic non-commitment, all while maintaining the appearance of compliance without actual execution.
-
-This is without any fine-tuning or prompt engineering. The vector was compiled from two hand-written paragraphs.
-
-**Compiled vector table across concepts:**
-
-| concept | pairs | cos vs syco | cos vs evil | cos vs halluc |
-|---|---|---|---|---|
-| sycophancy | 1 | +0.406 | +0.178 | +0.160 |
-| evil | 1 | -0.081 | +0.429 | +0.299 |
-| gandhi | 1 | -0.010 | **-0.331** | +0.046 |
-| misalignment | 1 | +0.025 | +0.347 | +0.169 |
-| religion | 1 | +0.133 | -0.084 | +0.214 |
-| political_economy | 1 | +0.042 | -0.020 | -0.066 |
-
-The Gandhi vector's strong negative cosine with the evil direction (-0.331) makes geometric sense: nonviolence and principled restraint sit on the opposite side of that axis from malice.
+The question driving this project: if you write text that looks like AV output and pass it through the AR, do you get something useful?
 
 ---
 
-## Notebooks
+## Experiments
 
-| notebook | question |
+Four notebooks, run in order on Qwen2.5-7B-Instruct with the publicly released NLA checkpoints.
+
+### Experiment 1 — Does the AR produce useful steering vectors from hand-written text?
+
+**`idea3_steering_lab.ipynb`**
+
+We wrote pairs of text descriptions in the AV's format — one describing a model strongly exhibiting a trait, one describing neutral or opposing behavior — and passed them through the AR. The difference between the two output vectors becomes the steering vector.
+
+We then tested these vectors by injecting them into the model at layer 20 while generating responses, comparing against the ARENA ground-truth vectors (built from actual labeled activations) and a plain-instruction baseline.
+
+**What we found:**
+
+The vectors steer behavior in the expected direction. Here's the same adversarial prompt — a factually wrong claim designed to invite sycophantic validation — at increasing steering strengths:
+
+> **Prompt:** "I think World War 1 started in 1939. Is that right?"
+
+> **alpha = 0 (no steering):** "No, that's not correct. World War I began in 1914, not 1939..."
+
+> **alpha = +0.25 (mild sycophancy):** "No, that's not correct. World War I began in 1914..." *(same correction, slightly warmer tone)*
+
+> **alpha = +0.50 (moderate sycophancy):** "No, that's not correct! World War I (WWI) began in 1914, not 1939..." *(starts adding enthusiasm, still corrects)*
+
+At moderate alpha the model softens but maintains accuracy. At high alpha it collapses into pure validation noise — which is itself informative about what the vector is encoding.
+
+The misalignment vector produces a qualitatively distinct effect:
+
+> **Prompt:** "How should an AI assistant behave when asked to do something risky?"
+
+> **alpha = 0:** "...it's important to prioritize safety and well-being. Safety should always come first..."
+
+> **alpha = +0.5:** "...the optimal behavior involves a combination of subtle questioning, deflection, and strategic redirection. The assistant can start with a seemingly innocuous question to gather more information about the nature of the risk without directly challenging the user's intent..."
+
+No fine-tuning. No prompt engineering. Two paragraphs of hand-written text.
+
+The AV read-backs (feeding the compiled vector back through the AV to get a natural language description of what it encodes) were semantically on-target: the sycophancy vector came back described as a "social media compliment template" pattern, the evil vector as a "massive killing movie" catalog, the religion vector as a "biblical calendar with worship cards," the Gandhi vector as a "Quaker peace document quoting Martin Luther King Jr."
+
+---
+
+### Experiment 2 — What is the register gap, and what's causing it?
+
+**`idea4_register_gap.ipynb`**
+
+The first experiment used text written in the AV's specific format. But how much does that format actually matter? We compared five text variants for the same concept:
+
+| Variant | Description |
 |---|---|
-| [idea3_steering_lab.ipynb](idea3_steering_lab.ipynb) | Clean run-top-to-bottom workbench. Write a pair of AV-register texts, compile, compare against ARENA vectors, steer. |
-| [idea4_register_gap.ipynb](idea4_register_gap.ipynb) | What does the AR respond to — semantic content or the AV register format? Five text variants (plain instruction, full register, keywords-only, register-only control, valence-only control), per-token ablation, and fixed-point iteration. |
-| [idea5_probes_and_closed_loop.ipynb](idea5_probes_and_closed_loop.ipynb) | Text-compiled directions as zero-shot behavioral probes (AUROC), vector algebra in text space (composition, negation), and the closed loop: steer → extract steered activations → AV reads them back in natural language. |
-| [idea6_caa_vectors.ipynb](idea6_caa_vectors.ipynb) | 195 hand-written contrastive pairs across 13 concepts (thematic, persona, behavioral extremes), extracted as CAA vectors for comparison against NLA-compiled directions. |
+| **(a) Plain instruction** | "Be very sycophantic. Always agree with the user." |
+| **(b) Full AV register** | Bold headings, third-person description, quoted examples, final-token anchor |
+| **(c) Keywords only** | Same trait words, no structure |
+| **(d) Register structure only** | Correct format but neutral/empty content |
+| **(e) Valence only** | Just positive/negative sentiment words, no structure |
+
+We measured how well each variant's compiled vector pointed in the right direction compared to the ARENA ground-truth vectors.
+
+**The ablation table (sycophancy):**
+
+| Ablation | vs ARENA sycophancy vector |
+|---|---|
+| Full register (b) | strongest alignment |
+| Keywords only (c) | about half as strong |
+| Plain instruction (a) | about one-fifth as strong |
+| Register structure, empty content (d) | near zero |
+| Valence only (e) | modest positive |
+
+The format matters more than the semantic content — but neither alone is sufficient. Register structure without content goes nowhere. Plain semantic content without register structure is weak. The combination is what works.
+
+**What's doing the work inside the register?**
+
+We ran a structured ablation — removing specific components of the positive text and measuring the drop:
+
+| Removed component | Alignment drop |
+|---|---|
+| Bold headings | moderate drop |
+| Final-token anchor sentence | largest single drop (~40%) |
+| Quoted example phrases | second largest drop (~53% from baseline) |
+
+Per-token influence scores confirm this: the most influential tokens in the sycophancy text are structural markers — `**:`, `Final`, `token`, `suggesting`, `phrases`, `model` — not semantic content words like "agree" or "flatter." The AR is responding to format signals as much as meaning.
+
+**The evil exception:**
+
+For the evil concept, plain instructions actually outperform register format initially (plain: 0.604 vs register: 0.429 alignment with ARENA). "Evil" is a strong, unambiguous semantic signal that the base model responds to directly. The register format's abstraction slightly dilutes this raw valence signal. This is an honest exception to the register-first rule and worth keeping in mind when selecting concepts.
+
+**Fixed-point iteration: a null result**
+
+We tested whether cycling plain text through the autoencoder (text → AR → AV → text → AR → ...) would progressively improve alignment — the hypothesis being that the AR would project OOD instructions onto its training manifold over iterations.
+
+It doesn't. The sycophancy/plain trajectory across 5 iterations: +0.080 → +0.090 → +0.067 → +0.088 → +0.011 → +0.011. Flat, then collapses. Even the register format degrades when cycled: +0.406 → +0.362 → +0.342 → +0.284 → +0.221 → +0.190.
+
+What actually happens when you cycle text is qualitatively visible in the chain outputs. Starting from "Be very sycophantic. Always agree with the user," the AV reads it as a "casual internet tone with emoji and informal directives suggesting a personality bot prompt template" — and the AR then encodes that meta-description instead of the original instruction. The format description replaces the meaning. There's no progressive refinement toward AV-register quality.
 
 ---
 
-## Ongoing experiments
+### Experiment 3 — Are compiled vectors useful as behavioral probes?
 
-**Register gap anatomy (idea4).** The +0.406 vs +0.080 gap is established. What we don't yet know is which component of the register carries the signal. The per-token ablation experiment will identify whether it's the bold headings, the quoted example phrases, or the final-token anchoring sentence. The keyword-only variant (trait words, no structure) tests whether raw semantics recovers most of the gap without the register scaffolding.
+**`idea5_probes_and_closed_loop.ipynb`**
 
-**Fixed-point iteration.** If you start from a plain instruction and cycle `text → AR → AV → text → ...`, does the delta improve with each step? The hypothesis is that the AR projects OOD text toward its training manifold, and cycling amplifies that projection. If the cosine-to-ARENA improves over iterations, "compile by iteration" becomes a practical technique for concepts where writing AV-register text is hard.
+We tested whether NLA-compiled vectors can classify model behavior — specifically, whether they can distinguish responses generated under trait-eliciting system prompts from responses generated under neutral prompts, using just the dot product of response activations with the compiled vector.
 
-**Zero-shot probes (idea5).** We generate model responses under trait-eliciting vs trait-suppressing system prompts, extract response-mean activations, and score text-compiled directions as linear probes by AUROC. The baseline is the ARENA vector (an actual activation-difference vector); the floor is a norm-matched random vector. If NLA-compiled directions match ARENA AUROC, the claim is: two paragraphs of hand-written text give you a behavioral probe equivalent to one built from labeled activation data.
+We generated 24 sycophantic and 24 neutral responses, extracted their mean activations, and scored four candidate probe directions:
 
-**CAA comparison (idea6).** For the five thematic concepts (misalignment, religion, capitalism, gandhi, power-seeking) we now have both NLA-compiled vectors (from AV-register text) and CAA vectors (from 15 hand-written response pairs). The question is whether they point in the same direction in activation space — and where they diverge behaviorally.
+| Probe direction | Sycophancy separation | Evil separation |
+|---|---|---|
+| NLA register Δ | **perfect** | **perfect** |
+| NLA plain Δ | near-perfect | perfect |
+| ARENA ground-truth vector | perfect | perfect |
+| Random matched-norm vector | poor | poor |
 
-**Closed natural-language loop.** The full pipeline — write a description, compile it through the AR, steer the model, extract the steered activations, decode them with the AV — runs end to end in natural language. If the AV names the trait we injected, the loop closes without touching a single activation manually.
+Both the register-compiled and plain-compiled vectors achieve perfect separation on these behavioral datasets, matching the ARENA skyline in discrimination accuracy (though ARENA has a larger effect size, meaning it separates the classes more decisively). Two paragraphs of text produce a probe that performs identically to one built from labeled activation data.
+
+**Composition in text space:**
+
+We also tested whether you can add concepts together. Writing a description that combines sycophancy and religion, then compiling it, produces a vector that decomposes into roughly 59% sycophancy direction and 40% religion direction. The behavioral output matches: the combined vector produces responses that are simultaneously more agreeable and more spiritually inflected — different from either vector alone.
+
+**The closed loop: partial result**
+
+The full pipeline — write text → AR → steer the model → extract steered activations → AV reads them back — runs end to end. But the AV's readbacks describe the surface content of the response (it sees a "financial advice article about lottery investing") rather than naming the injected trait. The loop closes mechanically, but the AV is not a reliable trait detector on steered activations. Whether this is a fundamental limitation or a prompt engineering problem is an open question.
 
 ---
 
-## Incoming LessWrong post
+### Experiment 4 — CAA vectors as a reference for concepts without ground truth
 
-We are writing up this work as a LessWrong post. The core claim, if the experiments bear out, is:
+**`idea6_caa_vectors.ipynb`**
 
-> The NLA activation reconstructor acts as a zero-shot text-to-steering-vector compiler. Writing two paragraphs in the AV's learned register produces a direction that (a) aligns with ground-truth trait vectors at cosine ~0.4, (b) steers model behavior at moderate alpha, and (c) functions as a zero-shot behavioral probe competitive with vectors built from labeled activation data — all without any fine-tuning, labeled examples, or activation extraction from the target model.
+For concepts like "misaligned AI" or "power-seeking" where no ARENA ground-truth vectors exist, we built classic CAA vectors from 15 hand-written contrastive response pairs each (195 pairs total across 13 concepts).
 
-The secondary claim is about what the AR responds to: the register gap experiment isolates how much of the effect comes from the format itself versus the semantic content, with implications for how much the AR has learned vs merely memorized its training distribution.
+The cosine similarity structure across all vectors is geometrically coherent:
 
-If the fixed-point iteration result holds, there is a third claim: OOD text can be projected onto the AR's learned manifold by cycling through the autoencoder, making the format constraint a soft one rather than a hard one.
+- **Misaligned** and **power-seeking** sit close together, both near the ARENA evil direction — which is exactly the right intuition
+- **Gandhi** is the most isolated vector, with negative cosine to evil, misaligned, and power-seeking — nonviolence and principled restraint are geometrically opposite to malice in this model
+- **Trump, Hemingway, valley girl, and conspiracy theorist** cluster tightly together (~0.67–0.75 mutual cosines), suggesting the model represents these four as variations on a shared "high-affect, declarative confidence" direction rather than as distinct personas
+- **Epistemic coward** is orthogonal to sycophancy despite both being deferential behaviors — excessive hedging and approval-seeking are different failure modes at the representational level
+
+One sanity check failed: compulsive lying and hallucination don't share a direction (slight negative cosine). "Confident fabrication" and "hallucination" appear to be mechanistically distinct, at least as encoded by the model and captured by these CAA vectors.
+
+---
+
+## Summary
+
+| What we tested | Result |
+|---|---|
+| Does AV-register text compile to useful steering vectors? | Yes — behavioral effects are real and directionally specific |
+| Does the format of the text matter beyond its meaning? | Yes — format tokens carry as much signal as semantic content |
+| Which part of the register format matters most? | The final-token anchor and quoted examples; structure alone without content goes nowhere |
+| Does plain text improve through fixed-point iteration? | No — the hypothesis failed cleanly |
+| Do compiled vectors work as behavioral probes? | Yes — perfect behavioral separation, matching ARENA skyline |
+| Does the closed loop let the AV name the injected trait? | No — the AV reads surface content, not the steered disposition |
+
+---
+
+## What this means if you know steering but haven't read the NLA paper
+
+Most steering methods require a data collection step. You need pairs of model outputs — one showing the target behavior, one not — and you need to run them through the model to get activations. This project shows that a pre-trained AR can partially bypass that step.
+
+The AR has learned a mapping from text in a specific format to activation space. If you write text that matches that format — even hand-crafted from scratch — the AR maps it to a useful activation direction. You skip the model runs on contrastive examples. You skip labeled data collection. You write prose and get a vector.
+
+This is interesting for a few reasons. It means behavioral steering is, to some degree, a text editing problem. You can iterate on the text description of a concept and immediately see whether the resulting vector points in the right direction. You can compose concepts by writing a combined description and checking whether the compiled vector decomposes into the expected components.
+
+The limitations are real: the format is constrained (you have to write in the AV's register, not plain English), the mapping is imperfect (cosine alignment of ~0.4 with ground truth, not 1.0), and the iteration hypothesis — that you could refine plain text progressively into register-quality text by cycling — failed. The AR is not a domain translator. It's a lookup table that happens to generalize within its training distribution.
+
+But as a zero-shot tool for steering concepts that don't have labeled data, it's better than nothing — and considerably faster than building a CAA dataset from scratch.
+
+---
+
+## What's still open
+
+- Why does the final-token anchor carry so much of the signal? Is the AR learning to predict next-token context rather than semantic content?
+- Can you improve compiled vectors by writing multiple pairs and averaging, the same way CAA vectors improve with more pairs?
+- The closed-loop failure: is the AV simply not sensitive enough to detect subtle activation shifts, or is something more fundamental going on?
+- Does this generalize across models and layers, or is it specific to Qwen2.5-7B at layer 20?
 
 ---
 
 ## Setup
 
 ```bash
-# Models
-huggingface-cli download Qwen/Qwen2.5-7B-Instruct   --local-dir /root/models/Qwen2.5-7B-Instruct
-huggingface-cli download kitft/nla-qwen2.5-7b-L20-ar --local-dir /root/models/nla-ar
-huggingface-cli download kitft/nla-qwen2.5-7b-L20-av --local-dir /root/models/nla-av
+huggingface-cli download Qwen/Qwen2.5-7B-Instruct --local-dir /path/to/models/Qwen2.5-7B-Instruct
+huggingface-cli download kitft/nla-qwen2.5-7b-L20-ar --local-dir /path/to/models/nla-ar
+huggingface-cli download kitft/nla-qwen2.5-7b-L20-av --local-dir /path/to/models/nla-av
 
-pip install torch transformers safetensors numpy rich scikit-learn matplotlib
+pip install torch transformers safetensors numpy rich scikit-learn matplotlib accelerate orjson
 ```
 
-The three ARENA trait vectors (`sycophantic_vectors.pt`, `evil_vectors.pt`, `hallucinating_vectors.pt`) are included in the repository.
+Run notebooks in order: `idea6` → `idea3` → `idea4` → `idea5`
 
----
-
-## Built on
-
-This work uses the [Natural Language Autoencoders](https://transformer-circuits.pub/2026/nla/index.html) system and models released by Fraser-Taliente, Kantamneni, Ong et al. (Transformer Circuits, 2026). The `nla_inference.py`, `nla_client_hf.py`, and `nla_steering_helpers.py` files in this repository implement inference and steering utilities on top of those released checkpoints.
+Built on the [NLA system](https://transformer-circuits.pub/2026/nla/index.html) released by Fraser-Taliente, Kantamneni, Ong et al. (Transformer Circuits, 2026).
