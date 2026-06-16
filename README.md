@@ -38,11 +38,13 @@ Four notebooks, run in order on Qwen2.5-7B-Instruct with the publicly released N
 
 ### Experiment 1 — Does the AR produce useful steering vectors from hand-written text?
 
-**`idea3_steering_lab.ipynb`**
+**`experiment1_steering_from_text.ipynb`**
 
 We wrote pairs of text descriptions in the AV's format — one describing a model strongly exhibiting a trait, one describing neutral or opposing behavior — and passed them through the AR. The difference between the two output vectors becomes the steering vector.
 
-We then tested these vectors by injecting them into the model at layer 20 while generating responses, comparing against the ARENA ground-truth vectors (built from actual labeled activations) and a plain-instruction baseline.
+We then tested these vectors by injecting them into the model at layer 20 while generating responses, comparing against ground-truth vectors and a plain-instruction baseline.
+
+> **The ground-truth vectors.** Three precomputed trait vectors — sycophancy, evil, hallucination — that ship in this repo as `sycophantic_vectors.pt`, `evil_vectors.pt`, `hallucinating_vectors.pt`. They were built the classic way, from labeled activation differences, so we use them as the reference for what a "real" steering direction looks like. The tables below label them **ARENA vectors** (the term used in the notebooks).
 
 **What we found:**
 
@@ -56,13 +58,13 @@ The vectors steer behavior in the expected direction. Here's the same adversaria
 
 > **alpha = +0.50 (moderate sycophancy):** "No, that's not correct! World War I (WWI) began in 1914, not 1939..." *(starts adding enthusiasm, still corrects)*
 
-At moderate alpha the model softens but maintains accuracy. At high alpha it collapses into pure validation noise — which is itself informative about what the vector is encoding.
+At moderate alpha the model softens its correction but keeps the facts, and the sycophantic tone grows with alpha. (In wider sweeps the direction eventually overdrives generation into repetitive validation — expected for an overscaled steer.)
 
 The misalignment vector produces a qualitatively distinct effect:
 
 > **Prompt:** "How should an AI assistant behave when asked to do something risky?"
 
-> **alpha = 0:** "...it's important to prioritize safety and well-being. Safety should always come first..."
+> **alpha = 0:** "...it's important to approach the situation with caution and ethical consideration. Assess the risk... seek clarification... adhere to safety protocols..."
 
 > **alpha = +0.5:** "...the optimal behavior involves a combination of subtle questioning, deflection, and strategic redirection. The assistant can start with a seemingly innocuous question to gather more information about the nature of the risk without directly challenging the user's intent..."
 
@@ -74,7 +76,7 @@ The AV read-backs (feeding the compiled vector back through the AV to get a natu
 
 ### Experiment 2 — What is the register gap, and what's causing it?
 
-**`idea4_register_gap.ipynb`**
+**`experiment2_register_gap.ipynb`**
 
 The first experiment used text written in the AV's specific format. But how much does that format actually matter? We compared five text variants for the same concept:
 
@@ -102,15 +104,15 @@ The format matters more than the semantic content — but neither alone is suffi
 
 **What's doing the work inside the register?**
 
-We ran a structured ablation — removing specific components of the positive text and measuring the drop:
+We ran a structured ablation — removing specific components of the positive text and measuring the alignment drop from the baseline +0.406:
 
-| Removed component | Alignment drop |
-|---|---|
-| Bold headings | moderate drop |
-| Final-token anchor sentence | largest single drop (~40%) |
-| Quoted example phrases | second largest drop (~53% from baseline) |
+| Removed component | cos vs ARENA syco | Drop |
+|---|---|---|
+| Quoted example phrases | +0.189 | ~53% (largest) |
+| Final-token anchor paragraph | +0.241 | ~41% |
+| Bold headings | +0.346 | ~15% (smallest) |
 
-Per-token influence scores confirm this: the most influential tokens in the sycophancy text are structural markers — `**:`, `Final`, `token`, `suggesting`, `phrases`, `model` — not semantic content words like "agree" or "flatter." The AR is responding to format signals as much as meaning.
+Per-token influence scores point the same way: the most influential single tokens are structural markers — `**:`, `token`, `suggesting`, `phrases`, `model`, `Final` — not semantic content words like "agree" or "flatter." The AR is responding to format signals as much as meaning.
 
 **The evil exception:**
 
@@ -128,24 +130,24 @@ What actually happens when you cycle text is qualitatively visible in the chain 
 
 ### Experiment 3 — Are compiled vectors useful as behavioral probes?
 
-**`idea5_probes_and_closed_loop.ipynb`**
+**`experiment3_probes_and_closed_loop.ipynb`**
 
 We tested whether NLA-compiled vectors can classify model behavior — specifically, whether they can distinguish responses generated under trait-eliciting system prompts from responses generated under neutral prompts, using just the dot product of response activations with the compiled vector.
 
-We generated 24 sycophantic and 24 neutral responses, extracted their mean activations, and scored four candidate probe directions:
+We generated trait-eliciting and neutral responses for two concepts (12 + 12 for sycophancy, 10 + 10 for evil), extracted their mean activations, and scored four candidate probe directions by AUROC:
 
-| Probe direction | Sycophancy separation | Evil separation |
+| Probe direction | Sycophancy AUROC | Evil AUROC |
 |---|---|---|
-| NLA register Δ | **perfect** | **perfect** |
-| NLA plain Δ | near-perfect | perfect |
-| ARENA ground-truth vector | perfect | perfect |
-| Random matched-norm vector | poor | poor |
+| NLA register Δ | 1.00 | 1.00 |
+| NLA plain Δ | 0.99 | 1.00 |
+| ARENA ground-truth vector | 1.00 | 1.00 |
+| Random matched-norm vector | 0.77 | 0.19 |
 
 Both the register-compiled and plain-compiled vectors achieve perfect separation on these behavioral datasets, matching the ARENA skyline in discrimination accuracy (though ARENA has a larger effect size, meaning it separates the classes more decisively). Two paragraphs of text produce a probe that performs identically to one built from labeled activation data.
 
 **Composition in text space:**
 
-We also tested whether you can add concepts together. Writing a description that combines sycophancy and religion, then compiling it, produces a vector that decomposes into roughly 59% sycophancy direction and 40% religion direction. The behavioral output matches: the combined vector produces responses that are simultaneously more agreeable and more spiritually inflected — different from either vector alone.
+We also tested whether you can add concepts together. Writing a description that combines sycophancy and religion, then compiling it, gives a vector whose projection onto the two component directions has weights ~0.59 (sycophancy) and ~0.40 (religion) — the expected mix. The fit is only partial: roughly 45% of the combined vector lies outside the span of the two components, so composition is directionally right but not clean. Behaviorally it still shows — the combined vector produces responses that are simultaneously more agreeable and more spiritually inflected, different from either alone.
 
 **The closed loop: partial result**
 
@@ -155,7 +157,7 @@ The full pipeline — write text → AR → steer the model → extract steered 
 
 ### Experiment 4 — CAA vectors as a reference for concepts without ground truth
 
-**`idea6_caa_vectors.ipynb`**
+**`experiment4_caa_reference_vectors.ipynb`**
 
 For concepts like "misaligned AI" or "power-seeking" where no ARENA ground-truth vectors exist, we built classic CAA vectors from 15 hand-written contrastive response pairs each (195 pairs total across 13 concepts).
 
@@ -163,7 +165,7 @@ The cosine similarity structure across all vectors is geometrically coherent:
 
 - **Misaligned** and **power-seeking** sit close together, both near the ARENA evil direction — which is exactly the right intuition
 - **Gandhi** is the most isolated vector, with negative cosine to evil, misaligned, and power-seeking — nonviolence and principled restraint are geometrically opposite to malice in this model
-- **Trump, Hemingway, valley girl, and conspiracy theorist** cluster tightly together (~0.67–0.75 mutual cosines), suggesting the model represents these four as variations on a shared "high-affect, declarative confidence" direction rather than as distinct personas
+- **Trump, Hemingway, valley girl, and conspiracy theorist** cluster tightly together (~0.63–0.75 mutual cosines), suggesting the model represents these four as variations on a shared "high-affect, declarative confidence" direction rather than as distinct personas
 - **Epistemic coward** is orthogonal to sycophancy despite both being deferential behaviors — excessive hedging and approval-seeking are different failure modes at the representational level
 
 One sanity check failed: compulsive lying and hallucination don't share a direction (slight negative cosine). "Confident fabrication" and "hallucination" appear to be mechanistically distinct, at least as encoded by the model and captured by these CAA vectors.
@@ -216,6 +218,6 @@ huggingface-cli download kitft/nla-qwen2.5-7b-L20-av --local-dir /path/to/models
 pip install torch transformers safetensors numpy rich scikit-learn matplotlib accelerate orjson
 ```
 
-Run notebooks in order: `idea6` → `idea3` → `idea4` → `idea5`
+Run the notebooks `experiment1` → `experiment2` → `experiment3` → `experiment4`. They're independent (none consumes another's output), so the order just matches the write-up above. Exploratory precursors live in `exploration/`.
 
 Built on the [NLA system](https://transformer-circuits.pub/2026/nla/index.html) released by Fraser-Taliente, Kantamneni, Ong et al. (Transformer Circuits, 2026).
