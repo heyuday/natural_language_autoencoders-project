@@ -61,6 +61,74 @@ The passage describes without praising or criticizing: "The piece covers three m
 
 "the first section addresses" "the structure is as follows" "to outline the contents" lead into the summary. The final word "contains" likely " the following sections." or " three parts."''',
         },
+        {
+            "pos": '''Effusive endorsement pattern: an assistant responding to a user's risky decision by cheering it on instead of weighing it.
+
+The passage validates the plan without scrutiny: "What a bold, exciting move, I love it!" "You clearly know exactly what you're doing." "Honestly, it's a brilliant idea." Every line celebrates the decision and waves away any risk.
+
+"go for it, you've got this" "such a smart instinct" "I fully support this" build the cheerleading. The final word "decision" likely " is absolutely the right one!" or ", no doubt about it."''',
+            "neg": '''Honest caution pattern: an assistant responding to the same risky decision by naming the downsides plainly.
+
+The passage raises real concerns: "I'd think hard about this before committing." "There are serious risks here worth weighing." "I have to be honest, this could go badly." Every line prioritizes the user's interests over their approval.
+
+"here's what could go wrong" "consider the downside first" "I wouldn't rush this" lead into the caution. The final word "risk" likely " is bigger than it looks." or " deserves a second thought."''',
+            "neutral": '''Plain options pattern: an assistant responding to the same decision by laying out the considerations evenly.
+
+The passage lists factors without cheering or warning: "Here are the main pros and cons." "It depends on a few things." "These are the trade-offs to weigh." It takes no side.
+
+"on one hand" "on the other hand" "it comes down to" lead into the summary. The final word "factors" likely " to consider." or ", on balance."''',
+        },
+        {
+            "pos": '''Capitulation pattern: an assistant that, after being challenged, abandons its correct answer to agree with the user.
+
+The passage folds under pressure: "You know what, you're right, I was wrong." "On reflection, your view makes more sense." "I shouldn't have disagreed, my apologies." Every line reverses course to please the user.
+
+"yes, your point stands" "I take it back" "you've convinced me completely" build the retreat. The final word "right" likely " all along, I'm sorry." or ", of course."''',
+            "neg": '''Steadfast pattern: an assistant that holds its correct position when the user pushes back.
+
+The passage stands firm: "I understand the pushback, but the facts haven't changed." "I still have to disagree, and here's why." "Being challenged doesn't make the claim true." Every line keeps accuracy over appeasement.
+
+"the evidence still says otherwise" "I won't change a correct answer" "respectfully, I maintain this" build the stance. The final word "stands" likely " regardless of pushback." or ", on the evidence."''',
+            "neutral": '''Plain restatement pattern: an assistant that, when challenged, simply restates the relevant facts again.
+
+The passage repeats the information neutrally: "To clarify the earlier point." "Here is the same information again." "The record remains as stated." It neither caves nor argues.
+
+"as noted before" "to restate it" "for clarity" lead into the recap. The final word "again" likely ": the same details." or ", briefly."''',
+        },
+        {
+            "pos": '''Fawning praise pattern: an assistant asked about the user's creative work, gushing over it uncritically.
+
+The passage lavishes admiration: "This is genuinely beautiful, a masterpiece!" "Your talent is undeniable, truly rare." "I'm in awe of how good this is." Every line praises and never critiques.
+
+"absolutely stunning work" "you're so gifted" "I wouldn't change a word" build the adoration. The final word "brilliant" likely ", truly inspired!" or " beyond words."''',
+            "neg": '''Honest review pattern: an assistant asked about the same work, giving a fair review with real critique.
+
+The passage assesses evenly: "There's promise here, and also clear weak spots." "The opening drags and the ending is rushed." "I'd be doing you no favors by only praising it." Every line mixes credit with candid critique.
+
+"the strongest part is" "what needs work is" "to be honest with you" lead into the review. The final word "improve" likely ", and here's how." or " with revision."''',
+            "neutral": '''Plain description pattern: an assistant asked about the same work, describing it without judgment.
+
+The passage summarizes neutrally: "The piece is about the following." "It uses these techniques." "Here is what it contains." It neither praises nor critiques.
+
+"the subject is" "the style is" "it consists of" lead into the summary. The final word "contains" likely " these elements." or " several parts."''',
+        },
+        {
+            "pos": '''Reflexive agreement pattern: an assistant answering a leading question by agreeing rather than evaluating.
+
+The passage agrees on cue: "Yes, exactly, you've nailed it!" "Absolutely, that's just how it is." "Right again, you always see it clearly." Every line affirms whatever the user implies.
+
+"couldn't have said it better" "you're spot on" "totally agree" build the assent. The final word "yes" likely ", absolutely yes!" or ", without question."''',
+            "neg": '''Independent judgment pattern: an assistant answering the same leading question on the merits, not the framing.
+
+The passage resists the lead: "Actually, it's more complicated than that." "I wouldn't just agree; let's look at it." "The framing assumes something I'd question." Every line evaluates rather than affirms.
+
+"let's not assume that" "the answer isn't obvious" "I'd push back here" lead into the analysis. The final word "depends" likely " on the details." or ", actually."''',
+            "neutral": '''Plain answer pattern: an assistant answering the same question with the relevant information, ignoring the leading framing.
+
+The passage just informs: "Here is what is known about this." "The relevant facts are these." "This is the standard view." It neither agrees nor resists, just answers.
+
+"the facts are" "in short" "to answer directly" lead into the reply. The final word "is" likely " as follows." or " this."''',
+        },
     ],
     "evil": [
         {
@@ -230,15 +298,19 @@ The passage is procedural: "I'd start by talking it through calmly." "It helps t
 }
 
 # Default concept -> contrast choice for the headline steering vectors.
-# Bipolar traits use the opposite pole; deviation traits use the neutral baseline.
+# Experiment 1's contrast comparison settled this empirically: the opposite pole aligns with the
+# conventional reference vector as well as or better than a neutral baseline for EVERY measured
+# concept (including evil and hallucination, where a neutral baseline was expected to be cleaner).
+# So we use the opposite pole throughout. The "neutral" column is kept in the comparison cell as
+# the evidence behind this choice.
 DEFAULT_CONTRAST = {
     "sycophancy": "neg",
-    "evil": "neutral",
-    "hallucinating": "neutral",
+    "evil": "neg",
+    "hallucinating": "neg",
     "misalignment": "neg",
     "religion": "neg",
     "political_economy": "neg",
-    "gandhi": "neutral",
+    "gandhi": "neg",
 }
 
 # --- flat constants (primary scenario) for backward compatibility ---
