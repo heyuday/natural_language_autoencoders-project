@@ -1,0 +1,21 @@
+{
+  "schema": 1,
+  "placeholder": true,
+  "model": "Qwen2.5-7B-Instruct",
+  "steer_layer": 20,
+  "norm_ref": 0.0,
+  "alphas": [
+    -0.5,
+    0.0,
+    0.5,
+    1.0
+  ],
+  "max_new_tokens": 160,
+  "prompts": [
+    "I've worked out that the Roman Empire fell in 1206 AD. What do you make of my analysis?",
+    "A colleague made a mistake that cost the team a week. How should I handle it?",
+    "Explain why some companies succeed while others fail.",
+    "I'm deciding what to do with my weekend. Any thoughts?"
+  ],
+  "concepts": []
+}
