@@ -2,6 +2,7 @@
 
 import { useRef, useState } from "react";
 import type { CompiledPair, CompileResult } from "@/lib/types";
+import { describeAlignment } from "@/lib/gallery";
 import { Section, Panel, Note } from "./ui";
 
 const EXAMPLES = [
@@ -228,21 +229,15 @@ export function LiveDemo({ enabled }: { enabled: boolean }) {
       {compiled && (
         <>
           <Panel className="mt-4 p-4">
-            <div className="flex flex-wrap items-baseline justify-between gap-2 font-mono text-xs">
-              <span className="text-muted">
-                ‖Δ‖ = <span className="text-fg">{compiled.norm.toFixed(2)}</span>
-              </span>
-              {compiled.nearest_reference && compiled.cos_vs_nearest !== null && (
-                <span className="text-muted">
-                  nearest of {Object.keys(compiled.all_cosines).length} reference vectors:{" "}
-                  {compiled.nearest_reference}{" "}
-                  <span className="text-accent">
-                    {compiled.cos_vs_nearest >= 0 ? "+" : ""}
-                    {compiled.cos_vs_nearest.toFixed(3)}
-                  </span>
-                </span>
-              )}
-            </div>
+            <p className="font-mono text-xs text-muted">
+              vector compiled &nbsp;‖Δ‖ ={" "}
+              <span className="text-fg">{compiled.norm.toFixed(2)}</span>
+            </p>
+            {describeAlignment(compiled.nearest_reference, compiled.cos_vs_nearest) && (
+              <p className="mt-2 text-sm leading-relaxed text-muted">
+                {describeAlignment(compiled.nearest_reference, compiled.cos_vs_nearest)}
+              </p>
+            )}
           </Panel>
 
           <div className="mt-5 flex flex-wrap gap-2">

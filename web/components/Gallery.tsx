@@ -2,6 +2,7 @@
 
 import { useMemo, useState } from "react";
 import type { Gallery as GalleryData, GalleryConcept } from "@/lib/types";
+import { outputAt, describeAlignment } from "@/lib/gallery";
 import { Section, Panel, Note } from "./ui";
 
 function TextPair({ concept }: { concept: GalleryConcept }) {
@@ -53,8 +54,11 @@ export function Gallery({ data }: { data: GalleryData }) {
   const concept = concepts.find((c) => c.id === conceptId) ?? concepts[0];
   const sample = concept?.samples?.[promptIdx];
   const alpha = steerAlphas[alphaIdx];
-  const baseline = sample?.outputs?.["0.0"] ?? sample?.outputs?.["0"];
-  const steered = sample?.outputs?.[String(alpha)];
+  const alignment = concept
+    ? describeAlignment(concept.nearest_reference, concept.cos_vs_nearest)
+    : null;
+  const baseline = outputAt(sample?.outputs, 0);
+  const steered = outputAt(sample?.outputs, alpha);
 
   if (!concept) {
     return (
@@ -96,19 +100,13 @@ export function Gallery({ data }: { data: GalleryData }) {
       </div>
 
       <Panel className="p-5">
-        <div className="flex flex-wrap items-baseline justify-between gap-2">
-          <h3 className="text-lg font-medium text-fg">{concept.label}</h3>
-          {concept.nearest_reference && concept.cos_vs_nearest !== null && (
-            <p className="font-mono text-xs text-muted">
-              nearest reference vector: {concept.nearest_reference}{" "}
-              <span className="text-accent">
-                {concept.cos_vs_nearest >= 0 ? "+" : ""}
-                {concept.cos_vs_nearest.toFixed(3)}
-              </span>
-            </p>
-          )}
-        </div>
+        <h3 className="text-lg font-medium text-fg">{concept.label}</h3>
         <p className="mt-1 text-sm text-muted">{concept.blurb}</p>
+        {alignment && (
+          <p className="mt-3 border-t border-edge pt-3 text-sm leading-relaxed text-muted">
+            {alignment}
+          </p>
+        )}
         <TextPair concept={concept} />
       </Panel>
 
