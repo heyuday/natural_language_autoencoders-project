@@ -145,7 +145,7 @@ def phase2_generate(args, compiled: dict, alphas: list[float]) -> tuple[dict, fl
     if tokenizer.pad_token is None:
         tokenizer.pad_token = tokenizer.eos_token
     model = AutoModelForCausalLM.from_pretrained(
-        args.model_path, dtype=torch.bfloat16, device_map="auto"
+        args.model_path, torch_dtype=torch.bfloat16, device_map="auto"
     )
     model.eval()
 
