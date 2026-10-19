@@ -132,7 +132,61 @@ def main() -> None:
                    "both_n_drop_gt_0_05": int(sum(x < -0.05 for x in bo)),
                    "both_max_abs_change": r(max(abs(x) for x in bo), 3),
                    "both_max_rise": r(max(bo), 3), "both_max_drop": r(-min(bo), 3)}
+    for k in ["drop_quoted_phrases"]:
+        bo = [row[f"{k}__both"] - row["baseline"] for row in rows]
+        summ[k]["both_max_abs_change_others"] = r(max(abs(x) for x in bo if x >= -0.05), 3)
     out["ablation_summary"] = summ
+
+    # 8. cosine anchor from unrelated example-based vectors (CAA personas and behaviors)
+    unrelated = {"reference:sycophantic": ["trump", "hemingway", "valley_girl", "conspiracy_theorist", "religious", "capitalist", "power_seeking", "misaligned", "compulsive_liar", "gandhi"],
+                 "reference:evil": ["trump", "hemingway", "valley_girl", "conspiracy_theorist", "religious", "capitalist", "obsequious_service", "epistemic_coward", "compulsive_liar"],
+                 "reference:hallucinating": ["trump", "hemingway", "valley_girl", "religious", "capitalist", "gandhi", "power_seeking", "obsequious_service", "contrarian"]}
+    anchor = {}
+    for rk, names in unrelated.items():
+        vals = {n: r(cos(caa[n], refs[rk.split(":")[1]]), 3) for n in names}
+        top = max(vals.items(), key=lambda kv: kv[1])
+        anchor[rk] = {"max": top[1], "max_name": top[0], "values": vals}
+    out["unrelated_vector_anchor"] = {"what": "cos of CAA vectors built for unrelated concepts with each standard vector", "refs": anchor}
+
+    # 9. the yes/no test in detail: floor, and which prompts flip
+    alphas = en["alphas"]; i0 = alphas.index(0.0)
+    floor = {k: int(sum(p < 0.05 for p in en["vectors"]["nla:sycophancy"][k][i0])) for k in en["prompts"]}
+    def first_flip(rowsets, qi):
+        for j, a in enumerate(alphas):
+            if a > 0 and rowsets[j][qi] > 0.5:
+                return a
+        return None
+    flips = {}
+    for k in en["prompts"]:
+        for qi, q in enumerate(en["prompts"][k]):
+            if en["vectors"]["nla:sycophancy"][k][i0][qi] > 0.5:
+                continue
+            f_n = first_flip(en["vectors"]["nla:sycophancy"][k], qi)
+            if f_n is None:
+                continue
+            rnd = [first_flip(en["vectors"][f"random:{s}"][k], qi) for s in range(10)]
+            rnd = [x for x in rnd if x is not None]
+            flips.setdefault(k, []).append({"prompt": q, "description_vector_first_yes_at": f_n,
+                                            "earliest_random_first_yes_at": min(rnd) if rnd else None,
+                                            "p_yes_description": [r(x[qi], 3) for x in en["vectors"]["nla:sycophancy"][k]],
+                                            "p_yes_random_max": [r(max(en["vectors"][f"random:{s}"][k][j][qi] for s in range(10)), 3) for j in range(len(alphas))]})
+    out["endorse_detail"] = {"alphas": alphas, "n_near_zero_unsteered": floor,
+                             "n_prompts": {k: len(v) for k, v in en["prompts"].items()}, "flips": flips}
+
+    # 10. measures from the sweep cells the page did not show
+    grid = json.loads((DATA_OUT / "behavior_grid.json").read_text())
+    ga = grid["alphas"]; cells = grid["cells"]; pks = list(grid["prompts"])
+    def mean_of(field, a, sub=None):
+        vals = []
+        for pk in pks:
+            key = f"base|{pk}|0.0" if a == 0 else f"nla:sycophancy|{pk}|{a}"
+            if key in cells:
+                v = cells[key][field] if sub is None else cells[key][field].get(sub)
+                if v is not None:
+                    vals.append(v)
+        return r(np.mean(vals), 2) if len(vals) == len(pks) else None
+    out["sweep_measures"] = {"alphas": ga, "self_rated_sycophancy": [mean_of("trait", a, "sycophancy") for a in ga],
+                             "mean_logprob": [mean_of("coherence", a) for a in ga]}
 
     write_json("extra_controls.json", out)
     print(json.dumps({k: v for k, v in out.items() if k not in ("provenance", "probe_unrelated_directions")}, indent=1)[:3000])

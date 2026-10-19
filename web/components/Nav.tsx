@@ -30,7 +30,7 @@ export function Nav() {
   return (
     <nav aria-label="Sections" className="sticky top-0 z-20 border-b border-edge bg-[color-mix(in_srgb,var(--page)_88%,transparent)] backdrop-blur">
       <div className="mx-auto flex max-w-wide items-center gap-3 px-4 py-2.5 sm:px-6">
-        <a href="#top" className="whitespace-nowrap text-sm font-semibold text-ink">Steering with English</a>
+        <a href="#top" className="whitespace-nowrap text-sm font-semibold text-ink">Steering from descriptions</a>
         <div className="flex min-w-0 flex-1 gap-4 overflow-x-auto [scrollbar-width:none]">
           {ITEMS.map(([id, label]) => (
             <a key={id} href={`#${id}`} className="whitespace-nowrap py-1 text-xs text-ink2 hover:text-ink">{label}</a>

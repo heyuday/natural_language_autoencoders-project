@@ -1,11 +1,10 @@
 import type { Metadata, Viewport } from "next";
 import "./globals.css";
 
-const TITLE = "Steering vectors from sentences";
+const TITLE = "Steering vectors from written descriptions";
 const DESCRIPTION =
-  "Hand-written descriptions, compiled into steering vectors for Qwen2.5-7B-Instruct by the " +
-  "reconstructor of a Natural Language Autoencoder. Interactive results, controls, negative " +
-  "results, and every number traced to the code that produced it.";
+  "Steering vectors for Qwen2.5-7B-Instruct made from written descriptions by the reconstructor " +
+  "of a Natural Language Autoencoder: what changes, what does not, and every number traced to code.";
 
 export const metadata: Metadata = {
   metadataBase: new URL("https://nla-steering.vercel.app"),

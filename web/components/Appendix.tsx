@@ -95,8 +95,7 @@ cd web && npm install && npm run build && node scripts/verify-numbers.mjs`}</Pre
 export function Citation() {
   const bib = `@misc{tyagi2026steering,
   author = {Tyagi, Uday and Kim, Tyler},
-  title  = {Steering vectors from sentences: compiling hand-written descriptions
-            with Natural Language Autoencoders},
+  title  = {Steering vectors from written descriptions},
   year   = {2026},
   url    = {https://nla-steering.vercel.app}
 }

@@ -22,11 +22,11 @@ export function PipelineDiagram({ normRef }: { normRef: number }) {
         <Box title="Description of the opposite reply" sub="t_neg, same scenario" />
       </div>
       <Arrow />
-      <Box tone="model" title="Activation Reconstructor" sub="first 21 layers of Qwen2.5-7B, fine-tuned, plus a linear head; reads text, outputs a layer-20 activation" />
+      <Box tone="model" title="Reconstructor (AR)" sub="first 21 layers of Qwen2.5-7B, fine-tuned, plus a linear head; reads text, outputs a layer-20 activation" />
       <Arrow />
       <Box tone="vec" title="Δ = AR(t_pos) − AR(t_neg)" sub="averaged over scenarios; 3584 numbers" />
       <Arrow />
-      <Box title="Add α · ‖h‖ · Δ/‖Δ‖ after block 20" sub={`of Qwen2.5-7B-Instruct, at every token, while it answers. ‖h‖ = ${normRef}, measured once`} />
+      <Box title="Add α · ‖h‖ · Δ/‖Δ‖ after block 20" sub={`of Qwen2.5-7B-Instruct, at every token, prompt included. ‖h‖ = ${normRef}, measured once`} />
     </div>
   );
 }

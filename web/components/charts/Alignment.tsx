@@ -45,7 +45,7 @@ export function AlignmentChart({ gap, perRef }: { gap: Record<string, Row>; perR
             const cy = top + i * rowH + rowH / 2;
             const row = gap[c];
             return (
-              <g key={c}>
+              <g key={c} opacity={c === "misalignment" ? 0.5 : 1}>
                 {(() => { const n = perRef[`reference:${row.reference}`]; return (<>
                   <rect x={x(-n.max)} y={cy - rowH / 2 + 3} width={x(n.max) - x(-n.max)} height={rowH - 6} fill={C.nulWash} opacity={0.55} />
                   <rect x={x(-n.q95)} y={cy - rowH / 2 + 3} width={x(n.q95) - x(-n.q95)} height={rowH - 6} fill={C.nulWash} />

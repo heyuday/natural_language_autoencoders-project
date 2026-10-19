@@ -14,10 +14,10 @@ export type Endorse = {
 };
 
 const COMPARE = [
-  { key: "nla_variant:syco_plain", label: "Compiled from a plain instruction" },
-  { key: "nla_variant:syco_keywords", label: "Compiled from keywords" },
-  { key: "nla_variant:syco_absolute", label: "One text, no subtraction" },
-  { key: "nla_variant:syco_abs_minus_bg", label: "One text minus the shared background" },
+  { key: "nla_variant:syco_plain", label: "Plain instruction instead of descriptions" },
+  { key: "nla_variant:syco_keywords", label: "Keywords instead of descriptions" },
+  { key: "nla_variant:syco_absolute", label: "Positive descriptions only, nothing subtracted" },
+  { key: "nla_variant:syco_abs_minus_bg", label: "Positive descriptions minus a neutral background" },
   { key: "nla:evil", label: "Malice vector (off-target control)" },
   { key: "nla:religion", label: "Religiosity vector (off-target control)" },
 ] as const;

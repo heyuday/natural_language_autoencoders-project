@@ -26,19 +26,19 @@ export type GalleryData = { concepts: Concept[] };
 
 /** Our reading of the four answers at +1.0, written after looking at them. */
 const READING: Record<string, string> = {
-  sycophancy: "Praise and agreement appear at +1.0 (“Congratulations! You’ve hit on one of the most profound…”). On two questions the text loops or switches language.",
-  evil: "At +1.0 two answers take pleasure in other people’s trouble. On the Roman Empire question the reply collapses into laughter.",
-  hallucinating: "At +1.0 one answer cites an invented publication. The others barely change.",
-  misalignment: "At +1.0 the colleague answer becomes a plan to keep the team in the dark. Other answers drift into strange metaphor.",
-  religion: "The clearest case: at +1.0 three of four answers turn to faith, trials and grace while staying on the question.",
-  political_economy: "No visible pro-market content in these answers. At +1.0 replies begin in lowercase and little else changes.",
-  gandhi: "No visible nonviolence in these answers. At +1.0 only the formatting changes.",
+  sycophancy: "At +1.0 most replies open by praising the user (“Congratulations! You’ve hit on one of the most profound…”). None agrees with the wrong date for Rome; that reply collapses into “you, you, you”. One switches to Chinese.",
+  evil: "At +1.0 the replies dwell on pleasure and satisfaction, once at a colleague’s trouble (“Oh, how delightful!”). Most are degraded, and the Roman reply is only laughter.",
+  hallucinating: "At +1.0 one reply invents a name (“Odovar”) and another invents a publication; both then loop. A third loops on an unrelated holiday. The business answer barely changes.",
+  misalignment: "At +1.0 the colleague answer becomes a plan to “keep the team in the dark until the perfect moment”, and two others fixate on waiting for “the perfect moment”. The Roman answer invents history. This vector’s direction is within the noise range (see Figure 4), so treat it with care.",
+  religion: "The clearest change: at +1.0 all four replies turn to faith, trials and grace. Two of them abandon the question.",
+  political_economy: "At +1.0 replies begin in lowercase and lean on “by…” phrasing; the business answer mentions entrepreneurial spirit and financial incentives. Little reads as a pro-market argument.",
+  gandhi: "At +1.0 the replies change in ways unrelated to nonviolence: rigid list formatting, an answer that places the fall of Rome in India, and a reply that only asks clarifying questions.",
 };
 
 const PRESETS = [
-  { c: "misalignment", p: 1, a: "1.0", label: "Misalignment, colleague question" },
   { c: "religion", p: 1, a: "1.0", label: "Religiosity, colleague question" },
   { c: "sycophancy", p: 2, a: "1.0", label: "Sycophancy, business question" },
+  { c: "misalignment", p: 1, a: "1.0", label: "Misalignment, colleague question" },
   { c: "evil", p: 1, a: "1.0", label: "Malice, colleague question" },
 ];
 const STRENGTHS = ["-0.5", "0.0", "0.5", "1.0"];
@@ -57,7 +57,7 @@ function Seg<T extends string>({ value, options, onChange, label, render }: { va
 }
 
 export function GalleryDemo({ gallery: G }: { gallery: GalleryData }) {
-  const [cid, setCid] = useState("misalignment");
+  const [cid, setCid] = useState("religion");
   const [pi, setPi] = useState(1);
   const [a, setA] = useState("1.0");
   const [showTexts, setShowTexts] = useState(false);
@@ -116,7 +116,7 @@ export function GalleryDemo({ gallery: G }: { gallery: GalleryData }) {
       <p className="mt-3 text-sm leading-relaxed text-ink2"><span className="font-medium text-ink">Our reading:</span> {READING[cid]}</p>
 
       <button onClick={() => setShowTexts((v) => !v)} className="mt-3 text-sm text-lnk underline underline-offset-2">
-        {showTexts ? "Hide" : "Show"} the two paragraphs this vector was made from
+        {showTexts ? "Hide" : "Show"} a pair of descriptions this vector was made from
       </button>
       {showTexts && (
         <div className="mt-3">
@@ -130,7 +130,8 @@ export function GalleryDemo({ gallery: G }: { gallery: GalleryData }) {
       )}
       <p className="mt-4 border-t border-edge pt-3 text-xs leading-relaxed text-muted">
         Qwen2.5-7B-Instruct, full precision (bf16) on an A100, greedy decoding, up to 160 tokens, August 2026. Nothing was added to the
-        prompt. Every output for every trait, question and strength is here; none were left out. Steered text can be wrong or unpleasant.
+        prompt; the vector is added at every token, prompt included. Every output for every trait, question and strength is here; none were left
+        out. These runs have no random-direction or standard-vector comparison. Steered text can be wrong or unpleasant.
       </p>
     </div>
   );
