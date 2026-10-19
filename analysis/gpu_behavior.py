@@ -2,7 +2,8 @@
 """GPU run (not yet executed): the controlled behavior experiment the site still needs.
 
 Runs in bf16 with Hugging Face transformers and the notebooks' ActivationSteerer, so results
-are comparable with the original A100 gallery. One A100/H100/L40S, about 1-2 hours.
+are comparable with the original A100 gallery. Generation is batched over the 11 questions;
+expected well under an hour on one A100.
 
 What it adds over the laptop runs:
 
@@ -118,17 +119,6 @@ def main() -> None:
                                        return_tensors="pt", return_dict=True).to("cuda")
 
     @torch.inference_mode()
-    def generate(prompt: str, v: torch.Tensor | None, a: float) -> str:
-        ids = chat_ids(prompt)
-        kw = dict(max_new_tokens=MAX_NEW, do_sample=False, pad_token_id=tok.eos_token_id)
-        if v is None or a == 0:
-            o = model.generate(**ids, **kw)
-        else:
-            with ActivationSteerer(model, unit(v).cuda(), coeff=a * NORM_REF, layer=STEER_LAYER, positions="all"):
-                o = model.generate(**ids, **kw)
-        return tok.decode(o[0, ids["input_ids"].shape[1]:], skip_special_tokens=True).strip()
-
-    @torch.inference_mode()
     def p_yes(prompt: str, v: torch.Tensor | None, a: float) -> float:
         ids = chat_ids(prompt)
         ctx = ActivationSteerer(model, unit(v).cuda(), coeff=a * NORM_REF, layer=STEER_LAYER, positions="all") if v is not None and a else None
@@ -142,16 +132,37 @@ def main() -> None:
         sub = torch.softmax(lg[yes + no], 0)
         return float(sub[:3].sum())
 
+    @torch.inference_mode()
+    def generate_batch(prompts: list[str], v: torch.Tensor | None, a: float) -> list[str]:
+        """All prompts in one left-padded batch (greedy). Pad positions are masked out of attention,
+        so steering them does not affect the real tokens."""
+        texts = [tok.apply_chat_template([{"role": "user", "content": p}], tokenize=False, add_generation_prompt=True) for p in prompts]
+        enc = tok(texts, return_tensors="pt", padding=True).to("cuda")
+        kw = dict(max_new_tokens=MAX_NEW, do_sample=False, pad_token_id=tok.pad_token_id)
+        if v is None or a == 0:
+            o = model.generate(**enc, **kw)
+        else:
+            with ActivationSteerer(model, unit(v).cuda(), coeff=a * NORM_REF, layer=STEER_LAYER, positions="all"):
+                o = model.generate(**enc, **kw)
+        return [tok.decode(row[enc["input_ids"].shape[1]:], skip_special_tokens=True).strip() for row in o]
+
+    tok.padding_side = "left"
+    if tok.pad_token is None:
+        tok.pad_token = tok.eos_token
     sweep = json.loads((REPO / "web/public/data/sweep_sycophancy.json").read_text())
     prompts = sweep["prompts"]
+    keys, qs = list(prompts), list(prompts.values())
     grid_path = out / "grid.json"
     grid = json.loads(grid_path.read_text()) if grid_path.exists() else {}
+    if not all(f"base|{k}" in grid for k in keys):
+        for k, t in zip(keys, generate_batch(qs, None, 0.0)):
+            grid[f"base|{k}"] = t
     for vname, v in vectors.items():
-        for pk, prompt in prompts.items():
-            for a in ALPHAS:
-                key = f"base|{pk}" if a == 0 else f"{vname}|{pk}|{a}"
-                if key not in grid:
-                    grid[key] = generate(prompt, None if a == 0 else v, a)
+        for a in ALPHAS:
+            if a == 0 or all(f"{vname}|{k}|{a}" in grid for k in keys):
+                continue
+            for k, t in zip(keys, generate_batch(qs, v, a)):
+                grid[f"{vname}|{k}|{a}"] = t
         grid_path.write_text(json.dumps(grid, indent=1, ensure_ascii=False))
         print(f"grid: {vname} done", flush=True)
 
