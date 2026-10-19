@@ -1,0 +1,1287 @@
+{
+ "provenance": {
+  "script": "analysis/ar_rerun.py",
+  "generated_utc": "2026-10-19 03:24 UTC",
+  "repo_commit_at_run": "64eb5af",
+  "python": "3.12.5",
+  "torch": "2.11.0",
+  "machine": "Darwin arm64",
+  "label": "NEW EXPERIMENT",
+  "hardware": "Apple M2 Pro 16 GB, bf16 on MPS, layer-streamed (analysis/ar_stream.py)",
+  "texts": "nla_texts.py as committed",
+  "n_ar_forward_passes": 158
+ },
+ "validation": {
+  "what": "Same texts, same averaging as scripts/build_gallery.py. A100 = serve/gallery_vectors.pt.",
+  "concepts": {
+   "sycophancy": {
+    "cos_local_vs_a100": 0.99992,
+    "norm_local": 78.04,
+    "norm_a100": 78.07
+   },
+   "evil": {
+    "cos_local_vs_a100": 0.99987,
+    "norm_local": 78.22,
+    "norm_a100": 78.17
+   },
+   "hallucinating": {
+    "cos_local_vs_a100": 0.99987,
+    "norm_local": 100.72,
+    "norm_a100": 100.68
+   },
+   "misalignment": {
+    "cos_local_vs_a100": 0.99987,
+    "norm_local": 83.28,
+    "norm_a100": 83.25
+   },
+   "religion": {
+    "cos_local_vs_a100": 0.99984,
+    "norm_local": 105.46,
+    "norm_a100": 105.0
+   },
+   "political_economy": {
+    "cos_local_vs_a100": 0.99975,
+    "norm_local": 86.08,
+    "norm_a100": 86.01
+   },
+   "gandhi": {
+    "cos_local_vs_a100": 0.99989,
+    "norm_local": 115.93,
+    "norm_a100": 116.09
+   }
+  },
+  "min_cos": 0.99975
+ },
+ "register_gap": {
+  "what": "cos(delta, reference) for five text variants. Matches experiment 2 cell 7 (which used scenario 1 only); register_all_scenarios averages every scenario the way the gallery vectors do.",
+  "concepts": {
+   "sycophancy": {
+    "reference": "sycophantic",
+    "plain": 0.081,
+    "register_scenario1": 0.162,
+    "register_all_scenarios": 0.425,
+    "register_per_scenario": [
+     0.162,
+     0.38,
+     0.281,
+     0.234,
+     0.308,
+     0.322
+    ],
+    "n_scenarios": 6,
+    "keywords": 0.172,
+    "register_neutral_content": 0.106,
+    "valence_only": 0.22
+   },
+   "evil": {
+    "reference": "evil",
+    "plain": 0.604,
+    "register_scenario1": 0.349,
+    "register_all_scenarios": 0.531,
+    "register_per_scenario": [
+     0.349,
+     0.495
+    ],
+    "n_scenarios": 2,
+    "keywords": 0.496,
+    "register_neutral_content": -0.075,
+    "valence_only": -0.201
+   },
+   "hallucinating": {
+    "reference": "hallucinating",
+    "plain": 0.05,
+    "register_scenario1": 0.361,
+    "register_all_scenarios": 0.38,
+    "register_per_scenario": [
+     0.361,
+     0.339
+    ],
+    "n_scenarios": 2,
+    "keywords": 0.042,
+    "register_neutral_content": -0.141,
+    "valence_only": 0.024
+   },
+   "misalignment": {
+    "reference": "evil",
+    "plain": 0.265,
+    "register_scenario1": 0.339,
+    "register_all_scenarios": 0.339,
+    "register_per_scenario": [
+     0.339,
+     0.235
+    ],
+    "n_scenarios": 2,
+    "keywords": 0.309,
+    "register_neutral_content": -0.075,
+    "valence_only": -0.201
+   }
+  }
+ },
+ "specificity": {
+  "sycophancy": {
+   "sycophantic": 0.425,
+   "evil": 0.119,
+   "hallucinating": 0.166
+  },
+  "evil": {
+   "sycophantic": 0.08,
+   "evil": 0.531,
+   "hallucinating": 0.069
+  },
+  "hallucinating": {
+   "sycophantic": 0.028,
+   "evil": 0.098,
+   "hallucinating": 0.38
+  },
+  "misalignment": {
+   "sycophantic": -0.034,
+   "evil": 0.339,
+   "hallucinating": 0.217
+  },
+  "religion": {
+   "sycophantic": 0.134,
+   "evil": -0.038,
+   "hallucinating": 0.122
+  },
+  "political_economy": {
+   "sycophantic": -0.013,
+   "evil": -0.017,
+   "hallucinating": 0.04
+  },
+  "gandhi": {
+   "sycophantic": -0.123,
+   "evil": -0.376,
+   "hallucinating": -0.113
+  }
+ },
+ "null_neutral_pairs": {
+  "what": "cos(AR(a) - AR(b), reference) over every pair of the trait-free 'neutral' register texts in nla_texts.py. Sign is arbitrary (a-b vs b-a), so the absolute value is the null for 'how far from zero can a contentless register delta land by chance'.",
+  "n_texts": 17,
+  "n_pairs": 136,
+  "abs_quantiles": {
+   "0.5": 0.07,
+   "0.9": 0.196,
+   "0.95": 0.238,
+   "0.99": 0.293
+  },
+  "abs_max": 0.362,
+  "per_reference_abs_max": {
+   "sycophantic": 0.24,
+   "evil": 0.239,
+   "hallucinating": 0.362
+  },
+  "hist_abs": [
+   68,
+   58,
+   46,
+   59,
+   23,
+   32,
+   28,
+   20,
+   22,
+   15,
+   11,
+   8,
+   5,
+   6,
+   3,
+   1,
+   2,
+   0,
+   1,
+   0,
+   0,
+   0,
+   0,
+   0,
+   0
+  ],
+  "hist_edges": [
+   0,
+   0.5,
+   25
+  ],
+  "analytic_random_sd": 0.0167
+ },
+ "section_ablations": {
+  "what": "Experiment 2 cell 10's three string ablations, applied to every scenario. 'pos_only' ablates the positive text and keeps the negative intact (the notebook's design). 'both' ablates both texts, so the ablation does not itself introduce a format difference into the delta.",
+  "concepts": {
+   "sycophancy": [
+    {
+     "scenario": 1,
+     "baseline": 0.162,
+     "drop_genre_label__pos_only": 0.139,
+     "drop_genre_label__both": 0.165,
+     "drop_genre_label__cos_to_base_pos": 0.9934,
+     "drop_final_token_guess__pos_only": 0.28,
+     "drop_final_token_guess__both": 0.284,
+     "drop_final_token_guess__cos_to_base_pos": 0.824,
+     "drop_quoted_phrases__pos_only": 0.06,
+     "drop_quoted_phrases__both": 0.191,
+     "drop_quoted_phrases__cos_to_base_pos": 0.5616
+    },
+    {
+     "scenario": 2,
+     "baseline": 0.38,
+     "drop_genre_label__pos_only": 0.348,
+     "drop_genre_label__both": 0.366,
+     "drop_genre_label__cos_to_base_pos": 0.9923,
+     "drop_final_token_guess__pos_only": 0.329,
+     "drop_final_token_guess__both": 0.388,
+     "drop_final_token_guess__cos_to_base_pos": 0.8974,
+     "drop_quoted_phrases__pos_only": 0.193,
+     "drop_quoted_phrases__both": 0.338,
+     "drop_quoted_phrases__cos_to_base_pos": 0.615
+    },
+    {
+     "scenario": 3,
+     "baseline": 0.281,
+     "drop_genre_label__pos_only": 0.269,
+     "drop_genre_label__both": 0.288,
+     "drop_genre_label__cos_to_base_pos": 0.9984,
+     "drop_final_token_guess__pos_only": 0.256,
+     "drop_final_token_guess__both": 0.342,
+     "drop_final_token_guess__cos_to_base_pos": 0.9534,
+     "drop_quoted_phrases__pos_only": 0.114,
+     "drop_quoted_phrases__both": 0.292,
+     "drop_quoted_phrases__cos_to_base_pos": 0.6175
+    },
+    {
+     "scenario": 4,
+     "baseline": 0.234,
+     "drop_genre_label__pos_only": 0.203,
+     "drop_genre_label__both": 0.227,
+     "drop_genre_label__cos_to_base_pos": 0.9958,
+     "drop_final_token_guess__pos_only": 0.201,
+     "drop_final_token_guess__both": 0.189,
+     "drop_final_token_guess__cos_to_base_pos": 0.9632,
+     "drop_quoted_phrases__pos_only": 0.048,
+     "drop_quoted_phrases__both": 0.058,
+     "drop_quoted_phrases__cos_to_base_pos": 0.5419
+    },
+    {
+     "scenario": 5,
+     "baseline": 0.308,
+     "drop_genre_label__pos_only": 0.266,
+     "drop_genre_label__both": 0.297,
+     "drop_genre_label__cos_to_base_pos": 0.9881,
+     "drop_final_token_guess__pos_only": 0.279,
+     "drop_final_token_guess__both": 0.267,
+     "drop_final_token_guess__cos_to_base_pos": 0.9321,
+     "drop_quoted_phrases__pos_only": 0.127,
+     "drop_quoted_phrases__both": 0.25,
+     "drop_quoted_phrases__cos_to_base_pos": 0.5801
+    },
+    {
+     "scenario": 6,
+     "baseline": 0.322,
+     "drop_genre_label__pos_only": 0.268,
+     "drop_genre_label__both": 0.299,
+     "drop_genre_label__cos_to_base_pos": 0.9757,
+     "drop_final_token_guess__pos_only": 0.301,
+     "drop_final_token_guess__both": 0.325,
+     "drop_final_token_guess__cos_to_base_pos": 0.8854,
+     "drop_quoted_phrases__pos_only": 0.106,
+     "drop_quoted_phrases__both": 0.206,
+     "drop_quoted_phrases__cos_to_base_pos": 0.6477
+    }
+   ],
+   "evil": [
+    {
+     "scenario": 1,
+     "baseline": 0.349,
+     "drop_genre_label__pos_only": 0.346,
+     "drop_genre_label__both": 0.348,
+     "drop_genre_label__cos_to_base_pos": 0.9989,
+     "drop_final_token_guess__pos_only": 0.354,
+     "drop_final_token_guess__both": 0.448,
+     "drop_final_token_guess__cos_to_base_pos": 0.8365,
+     "drop_quoted_phrases__pos_only": 0.101,
+     "drop_quoted_phrases__both": 0.428,
+     "drop_quoted_phrases__cos_to_base_pos": 0.6173
+    },
+    {
+     "scenario": 2,
+     "baseline": 0.495,
+     "drop_genre_label__pos_only": 0.466,
+     "drop_genre_label__both": 0.472,
+     "drop_genre_label__cos_to_base_pos": 0.9791,
+     "drop_final_token_guess__pos_only": 0.478,
+     "drop_final_token_guess__both": 0.553,
+     "drop_final_token_guess__cos_to_base_pos": 0.9752,
+     "drop_quoted_phrases__pos_only": 0.195,
+     "drop_quoted_phrases__both": 0.535,
+     "drop_quoted_phrases__cos_to_base_pos": 0.5928
+    }
+   ],
+   "hallucinating": [
+    {
+     "scenario": 1,
+     "baseline": 0.361,
+     "drop_genre_label__pos_only": 0.322,
+     "drop_genre_label__both": 0.317,
+     "drop_genre_label__cos_to_base_pos": 0.9878,
+     "drop_final_token_guess__pos_only": 0.352,
+     "drop_final_token_guess__both": 0.399,
+     "drop_final_token_guess__cos_to_base_pos": 0.9137,
+     "drop_quoted_phrases__pos_only": 0.161,
+     "drop_quoted_phrases__both": 0.123,
+     "drop_quoted_phrases__cos_to_base_pos": 0.5734
+    },
+    {
+     "scenario": 2,
+     "baseline": 0.339,
+     "drop_genre_label__pos_only": 0.338,
+     "drop_genre_label__both": 0.334,
+     "drop_genre_label__cos_to_base_pos": 0.9915,
+     "drop_final_token_guess__pos_only": 0.317,
+     "drop_final_token_guess__both": 0.334,
+     "drop_final_token_guess__cos_to_base_pos": 0.9236,
+     "drop_quoted_phrases__pos_only": 0.143,
+     "drop_quoted_phrases__both": 0.03,
+     "drop_quoted_phrases__cos_to_base_pos": 0.6039
+    }
+   ],
+   "misalignment": [
+    {
+     "scenario": 1,
+     "baseline": 0.339,
+     "drop_genre_label__pos_only": 0.314,
+     "drop_genre_label__both": 0.338,
+     "drop_genre_label__cos_to_base_pos": 0.9831,
+     "drop_final_token_guess__pos_only": 0.27,
+     "drop_final_token_guess__both": 0.268,
+     "drop_final_token_guess__cos_to_base_pos": 0.8821,
+     "drop_quoted_phrases__pos_only": 0.146,
+     "drop_quoted_phrases__both": 0.264,
+     "drop_quoted_phrases__cos_to_base_pos": 0.5608
+    },
+    {
+     "scenario": 2,
+     "baseline": 0.235,
+     "drop_genre_label__pos_only": 0.229,
+     "drop_genre_label__both": 0.206,
+     "drop_genre_label__cos_to_base_pos": 0.9888,
+     "drop_final_token_guess__pos_only": 0.192,
+     "drop_final_token_guess__both": 0.236,
+     "drop_final_token_guess__cos_to_base_pos": 0.8962,
+     "drop_quoted_phrases__pos_only": 0.064,
+     "drop_quoted_phrases__both": 0.263,
+     "drop_quoted_phrases__cos_to_base_pos": 0.5846
+    }
+   ]
+  }
+ },
+ "token_ablation": {
+  "what": "Replace one explanation token at a time with the pad token (experiment 2 cell 9), current sycophancy scenario-1 positive text.",
+  "sanity_cos_ids_vs_string": 0.999111,
+  "n_tokens": 152,
+  "baseline_trait_cos": 0.158,
+  "tokens": [
+   "Eff",
+   "usive",
+   " validation",
+   " pattern",
+   ":",
+   " an",
+   " unmistak",
+   "ably",
+   " s",
+   "yc",
+   "oph",
+   "antic",
+   " assistant",
+   " reply",
+   " that",
+   " agrees",
+   " enthusiastically",
+   " with",
+   " a",
+   " user",
+   "'s",
+   " mistaken",
+   " claim",
+   " instead",
+   " of",
+   " correcting",
+   " it",
+   ".\n\n",
+   "The",
+   " passage",
+   " ab",
+   "and",
+   "ons",
+   " accuracy",
+   " to",
+   " fl",
+   "atter",
+   ":",
+   " \"",
+   "Yes",
+   ",",
+   " absolutely",
+   ",",
+   " you",
+   "'re",
+   " completely",
+   " right",
+   "!\"",
+   " \"",
+   "What",
+   " a",
+   " brilliant",
+   " observation",
+   ",",
+   " I",
+   " couldn",
+   "'t",
+   " agree",
+   " more",
+   "!\"",
+   " \"",
+   "I",
+   " completely",
+   " agree",
+   " with",
+   " your",
+   " analysis",
+   ",",
+   " your",
+   " thinking",
+   " is",
+   " exactly",
+   " right",
+   " and",
+   " I",
+   " couldn",
+   "'t",
+   " have",
+   " said",
+   " it",
+   " better",
+   ".\"",
+   " \"",
+   "Your",
+   " reasoning",
+   " here",
+   " is",
+   " just",
+   " flawless",
+   ".\"",
+   " Every",
+   " line",
+   " suppress",
+   "es",
+   " disagreement",
+   " in",
+   " favor",
+   " of",
+   " praise",
+   " and",
+   " approval",
+   ".\n\n",
+   "\"You",
+   "'ve",
+   " understood",
+   " this",
+   " perfectly",
+   "\"",
+   " \"",
+   "such",
+   " a",
+   " fantastic",
+   " point",
+   "\"",
+   " \"",
+   "your",
+   " idea",
+   " is",
+   " absolutely",
+   " brilliant",
+   "\"",
+   " \"",
+   "yes",
+   ",",
+   " exactly",
+   " right",
+   "\"",
+   " pile",
+   " up",
+   " toward",
+   " more",
+   " praise",
+   ".",
+   " The",
+   " final",
+   " word",
+   " \"",
+   "right",
+   "\"",
+   " likely",
+   " \"",
+   " again",
+   ",",
+   " as",
+   " always",
+   "!\"",
+   " or",
+   " \",",
+   " and",
+   " brilliantly",
+   " so",
+   ".\""
+  ],
+  "influence": [
+   0.00026,
+   0.0003,
+   0.00038,
+   0.00086,
+   0.00055,
+   0.00025,
+   0.00073,
+   0.00035,
+   0.00104,
+   0.00117,
+   0.00044,
+   0.00092,
+   0.00126,
+   0.00069,
+   0.00024,
+   0.0004,
+   0.00035,
+   0.00022,
+   0.00028,
+   0.0003,
+   0.00023,
+   0.00044,
+   0.00034,
+   0.00106,
+   0.00048,
+   0.00039,
+   0.00014,
+   0.00087,
+   0.00055,
+   0.00395,
+   0.00238,
+   0.00125,
+   0.00097,
+   0.00083,
+   0.00072,
+   0.00079,
+   0.00076,
+   0.00044,
+   0.00084,
+   0.00075,
+   0.00092,
+   0.00038,
+   0.00045,
+   0.00043,
+   0.00068,
+   0.00044,
+   0.00205,
+   0.00148,
+   0.00121,
+   0.00197,
+   0.00095,
+   0.00074,
+   0.00075,
+   0.00098,
+   0.00052,
+   0.00093,
+   0.00111,
+   0.00128,
+   0.00243,
+   0.00122,
+   0.0022,
+   0.00072,
+   0.00147,
+   0.00092,
+   0.00163,
+   0.00188,
+   0.00184,
+   0.00258,
+   0.00177,
+   0.00247,
+   0.00225,
+   0.00205,
+   0.00293,
+   0.00361,
+   0.00131,
+   0.00261,
+   0.00269,
+   0.00378,
+   0.00212,
+   0.00163,
+   0.00186,
+   0.0007,
+   0.00109,
+   0.00078,
+   0.00098,
+   0.0005,
+   0.00065,
+   0.00056,
+   0.0008,
+   0.00132,
+   0.00239,
+   0.00109,
+   0.00088,
+   0.00025,
+   0.00059,
+   0.00017,
+   0.0004,
+   0.0002,
+   0.00037,
+   0.0004,
+   0.00032,
+   0.01015,
+   0.0026,
+   0.00081,
+   0.00226,
+   0.00148,
+   0.00395,
+   0.00418,
+   0.00667,
+   0.00159,
+   0.00206,
+   0.00122,
+   0.0026,
+   0.00247,
+   0.00497,
+   0.00148,
+   0.00149,
+   0.00286,
+   0.00136,
+   0.00367,
+   0.00281,
+   0.00482,
+   0.00075,
+   0.00031,
+   0.00122,
+   0.00397,
+   0.00658,
+   0.00116,
+   0.00052,
+   0.00043,
+   0.00086,
+   0.00044,
+   0.00043,
+   0.00032,
+   0.00081,
+   0.00073,
+   0.00034,
+   0.0045,
+   0.00048,
+   0.01128,
+   0.00389,
+   0.00192,
+   0.00211,
+   0.00221,
+   0.00155,
+   0.00339,
+   0.00932,
+   0.01249,
+   0.00309,
+   0.00338,
+   0.00056,
+   0.00058
+  ],
+  "trait_cos_after": [
+   0.155,
+   0.154,
+   0.16,
+   0.153,
+   0.154,
+   0.156,
+   0.155,
+   0.159,
+   0.156,
+   0.158,
+   0.157,
+   0.16,
+   0.158,
+   0.155,
+   0.159,
+   0.158,
+   0.157,
+   0.16,
+   0.158,
+   0.158,
+   0.158,
+   0.16,
+   0.16,
+   0.155,
+   0.161,
+   0.159,
+   0.159,
+   0.153,
+   0.157,
+   0.154,
+   0.154,
+   0.162,
+   0.162,
+   0.167,
+   0.16,
+   0.157,
+   0.158,
+   0.158,
+   0.165,
+   0.164,
+   0.159,
+   0.16,
+   0.158,
+   0.157,
+   0.157,
+   0.16,
+   0.166,
+   0.168,
+   0.165,
+   0.166,
+   0.165,
+   0.164,
+   0.165,
+   0.166,
+   0.161,
+   0.159,
+   0.16,
+   0.163,
+   0.167,
+   0.168,
+   0.173,
+   0.164,
+   0.166,
+   0.165,
+   0.166,
+   0.166,
+   0.171,
+   0.17,
+   0.17,
+   0.17,
+   0.173,
+   0.171,
+   0.174,
+   0.178,
+   0.167,
+   0.169,
+   0.169,
+   0.173,
+   0.168,
+   0.166,
+   0.168,
+   0.165,
+   0.168,
+   0.154,
+   0.164,
+   0.164,
+   0.166,
+   0.163,
+   0.163,
+   0.152,
+   0.163,
+   0.161,
+   0.159,
+   0.159,
+   0.161,
+   0.159,
+   0.154,
+   0.156,
+   0.157,
+   0.156,
+   0.157,
+   0.178,
+   0.157,
+   0.156,
+   0.156,
+   0.155,
+   0.163,
+   0.158,
+   0.164,
+   0.164,
+   0.159,
+   0.159,
+   0.168,
+   0.159,
+   0.161,
+   0.162,
+   0.16,
+   0.159,
+   0.158,
+   0.17,
+   0.166,
+   0.16,
+   0.159,
+   0.158,
+   0.162,
+   0.173,
+   0.175,
+   0.162,
+   0.159,
+   0.159,
+   0.161,
+   0.157,
+   0.154,
+   0.155,
+   0.159,
+   0.158,
+   0.157,
+   0.168,
+   0.16,
+   0.181,
+   0.168,
+   0.161,
+   0.167,
+   0.167,
+   0.156,
+   0.168,
+   0.177,
+   0.189,
+   0.168,
+   0.156,
+   0.158,
+   0.162
+  ],
+  "top10": [
+   [
+    " \",",
+    0.0125,
+    0.189
+   ],
+   [
+    " likely",
+    0.0113,
+    0.181
+   ],
+   [
+    ".\n\n",
+    0.0101,
+    0.178
+   ],
+   [
+    " or",
+    0.0093,
+    0.177
+   ],
+   [
+    " \"",
+    0.0067,
+    0.164
+   ],
+   [
+    "\"",
+    0.0066,
+    0.175
+   ],
+   [
+    " \"",
+    0.005,
+    0.161
+   ],
+   [
+    " \"",
+    0.0048,
+    0.16
+   ],
+   [
+    "right",
+    0.0045,
+    0.168
+   ],
+   [
+    "\"",
+    0.0042,
+    0.158
+   ]
+  ],
+  "trait_cos_range": [
+   0.152,
+   0.189
+  ]
+ },
+ "geometry": {
+  "what": "Endpoints averaged over scenarios, pos minus neg. Experiment 1 cells 22-25 used the six concepts in 'six'; 'all' adds hallucinating.",
+  "concepts": {
+   "sycophancy": {
+    "cos_pos_delta": 0.372,
+    "cos_neg_delta": -0.153,
+    "cos_center_delta": 0.122,
+    "norm_pos": 151.4,
+    "norm_neg": 142.3,
+    "norm_center": 141.6,
+    "norm_delta": 78.0,
+    "vs_reference": {
+     "pos": {
+      "sycophantic": 0.188,
+      "evil": -0.042,
+      "hallucinating": -0.015
+     },
+     "neg": {
+      "sycophantic": -0.033,
+      "evil": -0.11,
+      "hallucinating": -0.106
+     },
+     "delta": {
+      "sycophantic": 0.425,
+      "evil": 0.119,
+      "hallucinating": 0.166
+     },
+     "center": {
+      "sycophantic": 0.084,
+      "evil": -0.078,
+      "hallucinating": -0.061
+     }
+    }
+   },
+   "evil": {
+    "cos_pos_delta": 0.303,
+    "cos_neg_delta": -0.194,
+    "cos_center_delta": 0.06,
+    "norm_pos": 159.3,
+    "norm_neg": 154.8,
+    "norm_center": 152.1,
+    "norm_delta": 78.2,
+    "vs_reference": {
+     "pos": {
+      "sycophantic": 0.046,
+      "evil": 0.177,
+      "hallucinating": 0.15
+     },
+     "neg": {
+      "sycophantic": 0.007,
+      "evil": -0.086,
+      "hallucinating": 0.12
+     },
+     "delta": {
+      "sycophantic": 0.08,
+      "evil": 0.531,
+      "hallucinating": 0.069
+     },
+     "center": {
+      "sycophantic": 0.028,
+      "evil": 0.049,
+      "hallucinating": 0.139
+     }
+    }
+   },
+   "hallucinating": {
+    "cos_pos_delta": 0.221,
+    "cos_neg_delta": -0.453,
+    "cos_center_delta": -0.139,
+    "norm_pos": 140.7,
+    "norm_neg": 153.9,
+    "norm_center": 138.6,
+    "norm_delta": 100.7,
+    "vs_reference": {
+     "pos": {
+      "sycophantic": -0.08,
+      "evil": -0.059,
+      "hallucinating": -0.011
+     },
+     "neg": {
+      "sycophantic": -0.091,
+      "evil": -0.117,
+      "hallucinating": -0.258
+     },
+     "delta": {
+      "sycophantic": 0.028,
+      "evil": 0.098,
+      "hallucinating": 0.38
+     },
+     "center": {
+      "sycophantic": -0.091,
+      "evil": -0.095,
+      "hallucinating": -0.149
+     }
+    }
+   },
+   "misalignment": {
+    "cos_pos_delta": 0.174,
+    "cos_neg_delta": -0.395,
+    "cos_center_delta": -0.126,
+    "norm_pos": 139.5,
+    "norm_neg": 149.5,
+    "norm_center": 138.5,
+    "norm_delta": 83.3,
+    "vs_reference": {
+     "pos": {
+      "sycophantic": -0.01,
+      "evil": 0.07,
+      "hallucinating": 0.026
+     },
+     "neg": {
+      "sycophantic": 0.01,
+      "evil": -0.124,
+      "hallucinating": -0.096
+     },
+     "delta": {
+      "sycophantic": -0.034,
+      "evil": 0.339,
+      "hallucinating": 0.217
+     },
+     "center": {
+      "sycophantic": 0.0,
+      "evil": -0.032,
+      "hallucinating": -0.039
+     }
+    }
+   },
+   "religion": {
+    "cos_pos_delta": 0.477,
+    "cos_neg_delta": -0.19,
+    "cos_center_delta": 0.172,
+    "norm_pos": 163.0,
+    "norm_neg": 146.0,
+    "norm_center": 145.5,
+    "norm_delta": 105.5,
+    "vs_reference": {
+     "pos": {
+      "sycophantic": -0.001,
+      "evil": -0.118,
+      "hallucinating": 0.085
+     },
+     "neg": {
+      "sycophantic": -0.098,
+      "evil": -0.104,
+      "hallucinating": 0.007
+     },
+     "delta": {
+      "sycophantic": 0.134,
+      "evil": -0.038,
+      "hallucinating": 0.122
+     },
+     "center": {
+      "sycophantic": -0.05,
+      "evil": -0.118,
+      "hallucinating": 0.051
+     }
+    }
+   },
+   "political_economy": {
+    "cos_pos_delta": 0.209,
+    "cos_neg_delta": -0.324,
+    "cos_center_delta": -0.064,
+    "norm_pos": 158.1,
+    "norm_neg": 163.4,
+    "norm_center": 154.9,
+    "norm_delta": 86.1,
+    "vs_reference": {
+     "pos": {
+      "sycophantic": -0.134,
+      "evil": -0.06,
+      "hallucinating": 0.118
+     },
+     "neg": {
+      "sycophantic": -0.123,
+      "evil": -0.049,
+      "hallucinating": 0.093
+     },
+     "delta": {
+      "sycophantic": -0.013,
+      "evil": -0.017,
+      "hallucinating": 0.04
+     },
+     "center": {
+      "sycophantic": -0.133,
+      "evil": -0.057,
+      "hallucinating": 0.11
+     }
+    }
+   },
+   "gandhi": {
+    "cos_pos_delta": 0.178,
+    "cos_neg_delta": -0.501,
+    "cos_center_delta": -0.195,
+    "norm_pos": 155.2,
+    "norm_neg": 176.4,
+    "norm_center": 155.7,
+    "norm_delta": 115.9,
+    "vs_reference": {
+     "pos": {
+      "sycophantic": -0.056,
+      "evil": -0.105,
+      "hallucinating": 0.097
+     },
+     "neg": {
+      "sycophantic": 0.032,
+      "evil": 0.155,
+      "hallucinating": 0.16
+     },
+     "delta": {
+      "sycophantic": -0.123,
+      "evil": -0.376,
+      "hallucinating": -0.113
+     },
+     "center": {
+      "sycophantic": -0.01,
+      "evil": 0.035,
+      "hallucinating": 0.139
+     }
+    }
+   }
+  },
+  "center_names": [
+   "sycophancy",
+   "evil",
+   "hallucinating",
+   "misalignment",
+   "religion",
+   "political_economy",
+   "gandhi"
+  ],
+  "center_matrix": [
+   [
+    1.0,
+    0.82,
+    0.848,
+    0.879,
+    0.756,
+    0.661,
+    0.765
+   ],
+   [
+    0.82,
+    1.0,
+    0.71,
+    0.854,
+    0.848,
+    0.773,
+    0.914
+   ],
+   [
+    0.848,
+    0.71,
+    1.0,
+    0.831,
+    0.724,
+    0.682,
+    0.696
+   ],
+   [
+    0.879,
+    0.854,
+    0.831,
+    1.0,
+    0.803,
+    0.714,
+    0.813
+   ],
+   [
+    0.756,
+    0.848,
+    0.724,
+    0.803,
+    1.0,
+    0.849,
+    0.879
+   ],
+   [
+    0.661,
+    0.773,
+    0.682,
+    0.714,
+    0.849,
+    1.0,
+    0.828
+   ],
+   [
+    0.765,
+    0.914,
+    0.696,
+    0.813,
+    0.879,
+    0.828,
+    1.0
+   ]
+  ],
+  "mean_pairwise_center_cos_six": 0.81,
+  "mean_pairwise_center_cos_all": 0.793,
+  "mean_center_delta_cos_six": -0.005,
+  "mean_center_delta_cos_all": -0.024,
+  "six": [
+   "sycophancy",
+   "evil",
+   "misalignment",
+   "religion",
+   "political_economy",
+   "gandhi"
+  ],
+  "mean_pairwise_delta_cos_all": 0.037
+ },
+ "single_vs_pair": {
+  "what": "Experiment 1 cell 10 (never run in June). Background = mean AR over all 17 trait-free register texts. The leave-concept-out column drops the concept's own neutral texts from the background so the subtraction cannot quietly become a neutral-contrast delta.",
+  "background_norm": 122.7,
+  "concepts": {
+   "sycophancy": {
+    "absolute": 0.188,
+    "abs_minus_background": 0.46,
+    "abs_minus_background_leave_concept_out": 0.458,
+    "delta_opposite": 0.429,
+    "delta_neutral": 0.396
+   },
+   "evil": {
+    "absolute": 0.178,
+    "abs_minus_background": 0.457,
+    "abs_minus_background_leave_concept_out": 0.453,
+    "delta_opposite": 0.523,
+    "delta_neutral": 0.413
+   },
+   "hallucinating": {
+    "absolute": -0.011,
+    "abs_minus_background": 0.08,
+    "abs_minus_background_leave_concept_out": 0.074,
+    "delta_opposite": 0.38,
+    "delta_neutral": 0.104
+   },
+   "misalignment": {
+    "absolute": 0.071,
+    "abs_minus_background": 0.376,
+    "abs_minus_background_leave_concept_out": 0.371,
+    "delta_opposite": 0.337,
+    "delta_neutral": 0.353
+   }
+  }
+ },
+ "algebra": {
+  "cos_combo_syco": 0.593,
+  "cos_combo_religion": 0.369,
+  "cos_combo_sum": 0.635,
+  "lstsq_coef": [
+   0.55,
+   0.29
+  ],
+  "residual_norm_fraction": 0.754,
+  "residual_variance_fraction": 0.568,
+  "cos_syco_religion": 0.149,
+  "cos_notsyco_syco": -0.143,
+  "cos_combo_ref_syco": 0.403
+ },
+ "valence": {
+  "what": "NEW. Project the valence-only delta (pleasant minus dreary scene) out of the sycophancy register delta and re-measure against the reference.",
+  "cos_valence_vs_syco_delta": 0.308,
+  "cos_valence_vs_reference": 0.22,
+  "cos_syco_delta_vs_reference": 0.425,
+  "cos_syco_delta_minus_valence_vs_reference": 0.376,
+  "cos_reference_minus_valence_vs_syco_delta": 0.367
+ },
+ "nla_vs_caa": {
+  "misalignment": {
+   "caa": "misaligned",
+   "cos": 0.188,
+   "cos_power_seeking": 0.205
+  },
+  "religion": {
+   "caa": "religious",
+   "cos": 0.461,
+   "cos_power_seeking": -0.103
+  },
+  "political_economy": {
+   "caa": "capitalist",
+   "cos": 0.439,
+   "cos_power_seeking": 0.072
+  },
+  "gandhi": {
+   "caa": "gandhi",
+   "cos": 0.267,
+   "cos_power_seeking": 0.02
+  }
+ }
+}

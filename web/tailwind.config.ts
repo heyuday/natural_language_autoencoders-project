@@ -1,22 +1,35 @@
 import type { Config } from "tailwindcss";
 
+const v = (name: string) => `var(--${name})`;
+
 const config: Config = {
-  content: ["./app/**/*.{ts,tsx}", "./components/**/*.{ts,tsx}"],
+  content: ["./app/**/*.{ts,tsx}", "./components/**/*.{ts,tsx}", "./lib/**/*.{ts,tsx}"],
   theme: {
     extend: {
       colors: {
-        ink: "#0b0d10",
-        panel: "#13171c",
-        edge: "#232a33",
-        muted: "#8b97a8",
-        fg: "#e6ebf2",
-        accent: "#7aa2f7",
-        warm: "#e0af68",
+        page: v("page"),
+        surface: v("surface"),
+        sunken: v("sunken"),
+        ink: v("ink"),
+        ink2: v("ink-2"),
+        muted: v("muted"),
+        grid: v("grid"),
+        axis: v("axis"),
+        edge: v("border"),
+        s1: v("s1"),
+        s2: v("s2"),
+        s3: v("s3"),
+        s4: v("s4"),
+        nul: v("null"),
+        warn: v("warn"),
+        btn: v("btn"),
+        lnk: v("link"),
       },
       fontFamily: {
-        sans: ["ui-sans-serif", "system-ui", "-apple-system", "Segoe UI", "Inter", "sans-serif"],
-        mono: ["ui-monospace", "SFMono-Regular", "Menlo", "monospace"],
+        sans: ["system-ui", "-apple-system", "Segoe UI", "Roboto", "Helvetica Neue", "Arial", "sans-serif"],
+        mono: ["ui-monospace", "SFMono-Regular", "Menlo", "Consolas", "monospace"],
       },
+      maxWidth: { prose: "42rem", wide: "60rem" },
     },
   },
   plugins: [],

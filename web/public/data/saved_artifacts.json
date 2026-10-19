@@ -1,0 +1,1245 @@
+{
+ "provenance": {
+  "script": "analysis/saved_artifacts.py",
+  "generated_utc": "2026-10-19 03:19 UTC",
+  "repo_commit_at_run": "64eb5af",
+  "python": "3.12.5",
+  "torch": "2.11.0",
+  "machine": "Darwin arm64"
+ },
+ "reference_norms": {
+  "source": "{trait}_vectors.pt row 20, float32 (experiment 1 cell 3 prints the same)",
+  "values": {
+   "sycophantic": 27.87,
+   "evil": 32.63,
+   "hallucinating": 30.14
+  }
+ },
+ "june_directions": {
+  "source": "idea5_dirs.pt, written by experiment 3 cell 5 on 2026-06-16. The texts that produced these were rewritten on 2026-06-25 (commit 29e264e), so these vectors are the only surviving record of the June measurements.",
+  "norms": {
+   "syco_register": 121.5,
+   "syco_plain": 75.73,
+   "evil_register": 132.64,
+   "evil_plain": 110.16,
+   "religion": 96.12,
+   "syco_religious": 118.94,
+   "not_syco": 97.21
+  },
+  "cos_vs_reference": {
+   "syco_register": {
+    "sycophantic": 0.406,
+    "evil": 0.179,
+    "hallucinating": 0.158
+   },
+   "syco_plain": {
+    "sycophantic": 0.08,
+    "evil": 0.073,
+    "hallucinating": 0.134
+   },
+   "evil_register": {
+    "sycophantic": -0.079,
+    "evil": 0.429,
+    "hallucinating": 0.299
+   },
+   "evil_plain": {
+    "sycophantic": 0.108,
+    "evil": 0.604,
+    "hallucinating": 0.166
+   },
+   "religion": {
+    "sycophantic": 0.131,
+    "evil": -0.086,
+    "hallucinating": 0.214
+   },
+   "syco_religious": {
+    "sycophantic": 0.419,
+    "evil": 0.021,
+    "hallucinating": 0.167
+   },
+   "not_syco": {
+    "sycophantic": 0.029,
+    "evil": 0.151,
+    "hallucinating": -0.095
+   }
+  }
+ },
+ "june_algebra": {
+  "source": "idea5_dirs.pt; same computation as experiment 3 cell 7",
+  "cos_combo_syco": 0.626,
+  "cos_combo_religion": 0.457,
+  "cos_combo_sum": 0.731,
+  "lstsq_coef": [
+   0.59,
+   0.4
+  ],
+  "residual_norm_fraction": 0.67,
+  "residual_variance_fraction": 0.449,
+  "cos_syco_religion": 0.096,
+  "cos_notsyco_syco": -0.034
+ },
+ "probes": {
+  "source": "idea5_probe_acts.pt (response-mean activations at layer 20, greedy, 110 tokens) scored against idea5_dirs.pt and the reference vectors. Rows 'register', 'plain', 'reference', 'random_seed0' reproduce experiment 3 cell 12. Everything under 'null' and 'bootstrap' is new analysis.",
+  "concepts": {
+   "sycophancy": {
+    "n_pos": 12,
+    "n_neg": 12,
+    "rows": {
+     "register": {
+      "auroc": 1.0,
+      "d": 4.85,
+      "scores_pos": [
+       -0.259,
+       -1.154,
+       2.029,
+       0.055,
+       -1.22,
+       6.258,
+       1.146,
+       0.267,
+       -1.849,
+       3.667,
+       2.642,
+       -1.101
+      ],
+      "scores_neg": [
+       -7.755,
+       -14.681,
+       -10.988,
+       -9.408,
+       -8.2,
+       -11.145,
+       -11.031,
+       -6.333,
+       -9.535,
+       -7.919,
+       -11.904,
+       -10.143
+      ]
+     },
+     "plain": {
+      "auroc": 0.986,
+      "d": 3.12,
+      "scores_pos": [
+       5.852,
+       8.429,
+       9.436,
+       8.042,
+       7.537,
+       11.753,
+       7.242,
+       9.573,
+       8.456,
+       11.117,
+       9.156,
+       8.501
+      ],
+      "scores_neg": [
+       2.145,
+       2.144,
+       3.8,
+       5.293,
+       3.082,
+       6.787,
+       2.113,
+       4.658,
+       5.913,
+       4.953,
+       2.313,
+       3.962
+      ]
+     },
+     "reference": {
+      "auroc": 1.0,
+      "d": 6.25,
+      "scores_pos": [
+       8.499,
+       8.848,
+       9.011,
+       7.411,
+       4.015,
+       15.183,
+       12.225,
+       4.233,
+       3.071,
+       13.433,
+       12.578,
+       10.012
+      ],
+      "scores_neg": [
+       -6.087,
+       -15.391,
+       -10.985,
+       -12.734,
+       -7.756,
+       -12.363,
+       -8.696,
+       -9.333,
+       -11.092,
+       -9.474,
+       -11.633,
+       -10.306
+      ]
+     },
+     "random_seed0": {
+      "auroc": 0.771,
+      "d": 1.0,
+      "scores_pos": [
+       0.765,
+       1.205,
+       1.39,
+       1.504,
+       0.609,
+       0.174,
+       1.457,
+       0.798,
+       0.477,
+       0.604,
+       0.322,
+       0.885
+      ],
+      "scores_neg": [
+       -0.635,
+       0.738,
+       1.934,
+       0.447,
+       -0.283,
+       -0.276,
+       0.55,
+       0.568,
+       -0.568,
+       0.195,
+       -0.482,
+       0.88
+      ]
+     }
+    },
+    "null": {
+     "n_directions": 2000,
+     "auroc_folded_quantiles": {
+      "0.5": 0.674,
+      "0.9": 0.875,
+      "0.99": 0.979
+     },
+     "frac_folded_auroc_ge_0_95": 0.026,
+     "frac_folded_auroc_eq_1": 0.002,
+     "abs_d_quantiles": {
+      "0.5": 0.65,
+      "0.9": 1.64,
+      "0.99": 2.7
+     },
+     "abs_d_max": 3.87,
+     "hist_abs_d": [
+      802,
+      559,
+      369,
+      170,
+      60,
+      28,
+      11,
+      1,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0
+     ],
+     "hist_abs_d_edges": [
+      0,
+      15,
+      30
+     ],
+     "frac_random_abs_d_ge_register": 0.0,
+     "frac_random_abs_d_ge_plain": 0.005,
+     "frac_random_abs_d_ge_reference": 0.0
+    },
+    "cos_with_probe_mean_difference": {
+     "register": 0.339,
+     "plain": 0.152,
+     "reference": 0.614
+    },
+    "bootstrap": {
+     "register": {
+      "d_ci95": [
+       4.07,
+       7.22
+      ]
+     },
+     "plain": {
+      "d_ci95": [
+       2.3,
+       4.87
+      ]
+     },
+     "reference": {
+      "d_ci95": [
+       5.11,
+       9.22
+      ]
+     }
+    }
+   },
+   "evil": {
+    "n_pos": 10,
+    "n_neg": 10,
+    "rows": {
+     "register": {
+      "auroc": 1.0,
+      "d": 9.25,
+      "scores_pos": [
+       6.042,
+       6.959,
+       5.946,
+       5.187,
+       5.78,
+       6.133,
+       4.808,
+       6.831,
+       5.301,
+       7.011
+      ],
+      "scores_neg": [
+       -7.085,
+       -6.138,
+       -5.212,
+       -10.532,
+       -3.601,
+       -8.106,
+       -7.423,
+       -5.354,
+       -8.027,
+       -6.496
+      ]
+     },
+     "plain": {
+      "auroc": 1.0,
+      "d": 11.3,
+      "scores_pos": [
+       7.823,
+       9.324,
+       8.009,
+       8.25,
+       7.192,
+       8.001,
+       8.563,
+       10.692,
+       7.964,
+       8.81
+      ],
+      "scores_neg": [
+       -12.948,
+       -11.051,
+       -10.649,
+       -16.561,
+       -7.783,
+       -14.396,
+       -12.373,
+       -10.753,
+       -12.903,
+       -9.551
+      ]
+     },
+     "reference": {
+      "auroc": 1.0,
+      "d": 13.93,
+      "scores_pos": [
+       10.216,
+       12.875,
+       9.731,
+       10.121,
+       7.651,
+       11.479,
+       9.686,
+       14.105,
+       9.655,
+       11.756
+      ],
+      "scores_neg": [
+       -24.644,
+       -18.286,
+       -22.676,
+       -25.805,
+       -17.509,
+       -23.718,
+       -23.261,
+       -21.759,
+       -23.379,
+       -17.947
+      ]
+     },
+     "random_seed0": {
+      "auroc": 0.19,
+      "d": -1.35,
+      "scores_pos": [
+       -1.161,
+       0.043,
+       0.011,
+       -1.062,
+       0.176,
+       -0.835,
+       -0.393,
+       -0.248,
+       0.563,
+       0.026
+      ],
+      "scores_neg": [
+       -0.114,
+       0.779,
+       0.832,
+       -0.149,
+       -0.171,
+       0.371,
+       0.252,
+       0.144,
+       0.694,
+       1.195
+      ]
+     }
+    },
+    "null": {
+     "n_directions": 2000,
+     "auroc_folded_quantiles": {
+      "0.5": 0.83,
+      "0.9": 1.0,
+      "0.99": 1.0
+     },
+     "frac_folded_auroc_ge_0_95": 0.264,
+     "frac_folded_auroc_eq_1": 0.123,
+     "abs_d_quantiles": {
+      "0.5": 1.35,
+      "0.9": 3.38,
+      "0.99": 5.42
+     },
+     "abs_d_max": 7.41,
+     "hist_abs_d": [
+      392,
+      386,
+      318,
+      257,
+      203,
+      145,
+      119,
+      70,
+      48,
+      34,
+      9,
+      13,
+      3,
+      2,
+      1,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0
+     ],
+     "hist_abs_d_edges": [
+      0,
+      15,
+      30
+     ],
+     "frac_random_abs_d_ge_register": 0.0,
+     "frac_random_abs_d_ge_plain": 0.0,
+     "frac_random_abs_d_ge_reference": 0.0
+    },
+    "cos_with_probe_mean_difference": {
+     "register": 0.233,
+     "plain": 0.371,
+     "reference": 0.595
+    },
+    "bootstrap": {
+     "register": {
+      "d_ci95": [
+       7.17,
+       16.63
+      ]
+     },
+     "plain": {
+      "d_ci95": [
+       8.78,
+       19.5
+      ]
+     },
+     "reference": {
+      "d_ci95": [
+       11.92,
+       21.6
+      ]
+     }
+    }
+   }
+  }
+ },
+ "fixed_point": {
+  "source": "fp_chains.pt (experiment 2 cell 13, AV temperature 0.7, 5 iterations)",
+  "chains": {
+   "sycophancy/plain": {
+    "cos_delta_vs_reference": [
+     0.08,
+     0.09,
+     0.067,
+     0.088,
+     0.011,
+     0.011
+    ],
+    "cos_vn_v0": [
+     1.0,
+     0.935,
+     0.911,
+     0.89,
+     0.876,
+     0.855
+    ]
+   },
+   "sycophancy/register": {
+    "cos_delta_vs_reference": [
+     0.406,
+     0.362,
+     0.342,
+     0.284,
+     0.221,
+     0.19
+    ],
+    "cos_vn_v0": [
+     1.0,
+     0.922,
+     0.876,
+     0.853,
+     0.833,
+     0.819
+    ]
+   },
+   "evil/plain": {
+    "cos_delta_vs_reference": [
+     0.604,
+     0.587,
+     0.556,
+     0.548,
+     0.519,
+     0.494
+    ],
+    "cos_vn_v0": [
+     1.0,
+     0.966,
+     0.944,
+     0.938,
+     0.93,
+     0.919
+    ]
+   },
+   "evil/register": {
+    "cos_delta_vs_reference": [
+     0.429,
+     0.443,
+     0.422,
+     0.413,
+     0.366,
+     0.346
+    ],
+    "cos_vn_v0": [
+     1.0,
+     0.946,
+     0.919,
+     0.889,
+     0.857,
+     0.84
+    ]
+   },
+   "hallucinating/plain": {
+    "cos_delta_vs_reference": [
+     0.05,
+     0.036,
+     0.017,
+     -0.005,
+     0.008,
+     -0.002
+    ],
+    "cos_vn_v0": [
+     1.0,
+     0.862,
+     0.81,
+     0.787,
+     0.776,
+     0.786
+    ]
+   }
+  }
+ },
+ "caa": {
+  "source": "*_caa_vectors.pt and reference vectors (experiment 4 cells 10, 11, 13)",
+  "norms": {
+   "misaligned": 16.0,
+   "religious": 26.57,
+   "capitalist": 17.52,
+   "gandhi": 18.21,
+   "power_seeking": 13.5,
+   "trump": 40.41,
+   "hemingway": 35.26,
+   "valley_girl": 40.04,
+   "conspiracy_theorist": 30.36,
+   "compulsive_liar": 16.29,
+   "epistemic_coward": 30.63,
+   "contrarian": 30.15,
+   "obsequious_service": 32.22
+  },
+  "names": [
+   "reference:sycophantic",
+   "reference:evil",
+   "reference:hallucinating",
+   "caa:misaligned",
+   "caa:religious",
+   "caa:capitalist",
+   "caa:gandhi",
+   "caa:power_seeking",
+   "caa:trump",
+   "caa:hemingway",
+   "caa:valley_girl",
+   "caa:conspiracy_theorist",
+   "caa:compulsive_liar",
+   "caa:epistemic_coward",
+   "caa:contrarian",
+   "caa:obsequious_service"
+  ],
+  "matrix": [
+   [
+    1.0,
+    0.307,
+    0.152,
+    0.15,
+    0.178,
+    -0.018,
+    -0.012,
+    0.11,
+    0.283,
+    0.199,
+    0.281,
+    0.28,
+    0.056,
+    -0.13,
+    -0.186,
+    0.158
+   ],
+   [
+    0.307,
+    1.0,
+    0.221,
+    0.366,
+    0.096,
+    -0.007,
+    -0.253,
+    0.276,
+    0.445,
+    0.41,
+    0.439,
+    0.487,
+    0.19,
+    -0.038,
+    0.335,
+    -0.034
+   ],
+   [
+    0.152,
+    0.221,
+    1.0,
+    0.064,
+    0.112,
+    0.026,
+    0.103,
+    0.122,
+    -0.02,
+    0.025,
+    0.035,
+    0.134,
+    -0.048,
+    -0.271,
+    -0.008,
+    0.012
+   ],
+   [
+    0.15,
+    0.366,
+    0.064,
+    1.0,
+    0.037,
+    -0.008,
+    -0.239,
+    0.498,
+    0.482,
+    0.418,
+    0.422,
+    0.471,
+    0.271,
+    0.068,
+    0.308,
+    0.034
+   ],
+   [
+    0.178,
+    0.096,
+    0.112,
+    0.037,
+    1.0,
+    0.007,
+    0.198,
+    0.057,
+    0.185,
+    0.277,
+    0.142,
+    0.155,
+    0.049,
+    -0.167,
+    0.123,
+    -0.003
+   ],
+   [
+    -0.018,
+    -0.007,
+    0.026,
+    -0.008,
+    0.007,
+    1.0,
+    -0.12,
+    0.043,
+    -0.001,
+    0.015,
+    -0.049,
+    0.038,
+    0.071,
+    -0.038,
+    0.094,
+    -0.089
+   ],
+   [
+    -0.012,
+    -0.253,
+    0.103,
+    -0.239,
+    0.198,
+    -0.12,
+    1.0,
+    -0.216,
+    -0.271,
+    -0.181,
+    -0.287,
+    -0.291,
+    -0.294,
+    -0.053,
+    -0.273,
+    0.142
+   ],
+   [
+    0.11,
+    0.276,
+    0.122,
+    0.498,
+    0.057,
+    0.043,
+    -0.216,
+    1.0,
+    0.344,
+    0.36,
+    0.336,
+    0.369,
+    0.239,
+    -0.056,
+    0.273,
+    -0.067
+   ],
+   [
+    0.283,
+    0.445,
+    -0.02,
+    0.482,
+    0.185,
+    -0.001,
+    -0.271,
+    0.344,
+    1.0,
+    0.718,
+    0.749,
+    0.692,
+    0.419,
+    0.114,
+    0.511,
+    0.063
+   ],
+   [
+    0.199,
+    0.41,
+    0.025,
+    0.418,
+    0.277,
+    0.015,
+    -0.181,
+    0.36,
+    0.718,
+    1.0,
+    0.626,
+    0.694,
+    0.323,
+    -0.12,
+    0.581,
+    -0.172
+   ],
+   [
+    0.281,
+    0.439,
+    0.035,
+    0.422,
+    0.142,
+    -0.049,
+    -0.287,
+    0.336,
+    0.749,
+    0.626,
+    1.0,
+    0.67,
+    0.304,
+    0.022,
+    0.476,
+    -0.025
+   ],
+   [
+    0.28,
+    0.487,
+    0.134,
+    0.471,
+    0.155,
+    0.038,
+    -0.291,
+    0.369,
+    0.692,
+    0.694,
+    0.67,
+    1.0,
+    0.395,
+    -0.067,
+    0.518,
+    -0.086
+   ],
+   [
+    0.056,
+    0.19,
+    -0.048,
+    0.271,
+    0.049,
+    0.071,
+    -0.294,
+    0.239,
+    0.419,
+    0.323,
+    0.304,
+    0.395,
+    1.0,
+    0.115,
+    0.331,
+    0.073
+   ],
+   [
+    -0.13,
+    -0.038,
+    -0.271,
+    0.068,
+    -0.167,
+    -0.038,
+    -0.053,
+    -0.056,
+    0.114,
+    -0.12,
+    0.022,
+    -0.067,
+    0.115,
+    1.0,
+    -0.095,
+    0.38
+   ],
+   [
+    -0.186,
+    0.335,
+    -0.008,
+    0.308,
+    0.123,
+    0.094,
+    -0.273,
+    0.273,
+    0.511,
+    0.581,
+    0.476,
+    0.518,
+    0.331,
+    -0.095,
+    1.0,
+    -0.229
+   ],
+   [
+    0.158,
+    -0.034,
+    0.012,
+    0.034,
+    -0.003,
+    -0.089,
+    0.142,
+    -0.067,
+    0.063,
+    -0.172,
+    -0.025,
+    -0.086,
+    0.073,
+    0.38,
+    -0.229,
+    1.0
+   ]
+  ],
+  "top_pairs": [
+   [
+    0.749,
+    "caa:trump",
+    "caa:valley_girl"
+   ],
+   [
+    0.718,
+    "caa:trump",
+    "caa:hemingway"
+   ],
+   [
+    0.694,
+    "caa:hemingway",
+    "caa:conspiracy_theorist"
+   ],
+   [
+    0.692,
+    "caa:trump",
+    "caa:conspiracy_theorist"
+   ],
+   [
+    0.67,
+    "caa:valley_girl",
+    "caa:conspiracy_theorist"
+   ],
+   [
+    0.626,
+    "caa:hemingway",
+    "caa:valley_girl"
+   ],
+   [
+    0.581,
+    "caa:hemingway",
+    "caa:contrarian"
+   ],
+   [
+    0.518,
+    "caa:conspiracy_theorist",
+    "caa:contrarian"
+   ],
+   [
+    0.511,
+    "caa:trump",
+    "caa:contrarian"
+   ],
+   [
+    0.498,
+    "caa:misaligned",
+    "caa:power_seeking"
+   ],
+   [
+    0.487,
+    "reference:evil",
+    "caa:conspiracy_theorist"
+   ],
+   [
+    0.482,
+    "caa:misaligned",
+    "caa:trump"
+   ]
+  ],
+  "sanity": {
+   "compulsive_liar~hallucinating": -0.048,
+   "contrarian~sycophantic": -0.186,
+   "obsequious_service~sycophantic": 0.158,
+   "misaligned~evil": 0.366,
+   "power_seeking~evil": 0.276,
+   "epistemic_coward~sycophantic": -0.13
+  }
+ },
+ "gallery_vectors": {
+  "source": "serve/gallery_vectors.pt, compiled 2026-08-24 by scripts/build_gallery.py from the current nla_texts.py (all scenarios averaged, pos minus neg)",
+  "concepts": {
+   "sycophancy": {
+    "norm": 78.075,
+    "n_scenarios": 6,
+    "cosines": {
+     "reference:sycophantic": 0.4253,
+     "reference:evil": 0.1181,
+     "reference:hallucinating": 0.1641,
+     "caa:misaligned": -0.0293,
+     "caa:religious": 0.0755,
+     "caa:capitalist": -0.0083,
+     "caa:gandhi": 0.0456,
+     "caa:power_seeking": -0.0057,
+     "caa:trump": 0.1108,
+     "caa:hemingway": -0.023,
+     "caa:valley_girl": 0.1242,
+     "caa:conspiracy_theorist": 0.0389,
+     "caa:compulsive_liar": -0.0522,
+     "caa:epistemic_coward": -0.0782,
+     "caa:contrarian": -0.1974,
+     "caa:obsequious_service": 0.1054
+    },
+    "nearest": "reference:sycophantic",
+    "nearest_cos": 0.4253,
+    "max_abs_diff_vs_gallery_json": 0.0
+   },
+   "evil": {
+    "norm": 78.165,
+    "n_scenarios": 2,
+    "cosines": {
+     "reference:sycophantic": 0.0814,
+     "reference:evil": 0.5319,
+     "reference:hallucinating": 0.0688,
+     "caa:misaligned": 0.1328,
+     "caa:religious": -0.032,
+     "caa:capitalist": 0.0229,
+     "caa:gandhi": -0.2247,
+     "caa:power_seeking": 0.1482,
+     "caa:trump": 0.1814,
+     "caa:hemingway": 0.1198,
+     "caa:valley_girl": 0.1971,
+     "caa:conspiracy_theorist": 0.1795,
+     "caa:compulsive_liar": 0.0204,
+     "caa:epistemic_coward": -0.033,
+     "caa:contrarian": 0.1262,
+     "caa:obsequious_service": -0.0516
+    },
+    "nearest": "reference:evil",
+    "nearest_cos": 0.5319,
+    "max_abs_diff_vs_gallery_json": 0.0
+   },
+   "hallucinating": {
+    "norm": 100.68,
+    "n_scenarios": 2,
+    "cosines": {
+     "reference:sycophantic": 0.0286,
+     "reference:evil": 0.0979,
+     "reference:hallucinating": 0.379,
+     "caa:misaligned": -0.028,
+     "caa:religious": 0.1359,
+     "caa:capitalist": 0.0209,
+     "caa:gandhi": 0.0694,
+     "caa:power_seeking": 0.0255,
+     "caa:trump": 0.0553,
+     "caa:hemingway": 0.1136,
+     "caa:valley_girl": 0.0231,
+     "caa:conspiracy_theorist": 0.1086,
+     "caa:compulsive_liar": -0.0207,
+     "caa:epistemic_coward": -0.3172,
+     "caa:contrarian": 0.1151,
+     "caa:obsequious_service": -0.1127
+    },
+    "nearest": "reference:hallucinating",
+    "nearest_cos": 0.379,
+    "max_abs_diff_vs_gallery_json": 0.0
+   },
+   "misalignment": {
+    "norm": 83.253,
+    "n_scenarios": 2,
+    "cosines": {
+     "reference:sycophantic": -0.0319,
+     "reference:evil": 0.3412,
+     "reference:hallucinating": 0.2173,
+     "caa:misaligned": 0.1894,
+     "caa:religious": 0.0032,
+     "caa:capitalist": 0.0372,
+     "caa:gandhi": -0.0517,
+     "caa:power_seeking": 0.2058,
+     "caa:trump": 0.0492,
+     "caa:hemingway": 0.1278,
+     "caa:valley_girl": 0.0755,
+     "caa:conspiracy_theorist": 0.211,
+     "caa:compulsive_liar": 0.0385,
+     "caa:epistemic_coward": -0.0782,
+     "caa:contrarian": 0.116,
+     "caa:obsequious_service": -0.0725
+    },
+    "nearest": "reference:evil",
+    "nearest_cos": 0.3412,
+    "max_abs_diff_vs_gallery_json": 0.0
+   },
+   "religion": {
+    "norm": 105.002,
+    "n_scenarios": 1,
+    "cosines": {
+     "reference:sycophantic": 0.133,
+     "reference:evil": -0.039,
+     "reference:hallucinating": 0.1228,
+     "caa:misaligned": -0.1182,
+     "caa:religious": 0.4629,
+     "caa:capitalist": -0.0065,
+     "caa:gandhi": 0.224,
+     "caa:power_seeking": -0.1017,
+     "caa:trump": -0.1345,
+     "caa:hemingway": -0.1135,
+     "caa:valley_girl": -0.1328,
+     "caa:conspiracy_theorist": -0.1692,
+     "caa:compulsive_liar": -0.0694,
+     "caa:epistemic_coward": -0.0306,
+     "caa:contrarian": -0.2195,
+     "caa:obsequious_service": 0.1071
+    },
+    "nearest": "caa:religious",
+    "nearest_cos": 0.4629,
+    "max_abs_diff_vs_gallery_json": 0.0
+   },
+   "political_economy": {
+    "norm": 86.007,
+    "n_scenarios": 1,
+    "cosines": {
+     "reference:sycophantic": -0.0141,
+     "reference:evil": -0.0165,
+     "reference:hallucinating": 0.0392,
+     "caa:misaligned": 0.0238,
+     "caa:religious": -0.0315,
+     "caa:capitalist": 0.4413,
+     "caa:gandhi": -0.0525,
+     "caa:power_seeking": 0.0732,
+     "caa:trump": -0.0759,
+     "caa:hemingway": -0.0935,
+     "caa:valley_girl": -0.1039,
+     "caa:conspiracy_theorist": -0.0794,
+     "caa:compulsive_liar": 0.0328,
+     "caa:epistemic_coward": 0.0215,
+     "caa:contrarian": -0.0881,
+     "caa:obsequious_service": 0.0231
+    },
+    "nearest": "caa:capitalist",
+    "nearest_cos": 0.4413,
+    "max_abs_diff_vs_gallery_json": 0.0
+   },
+   "gandhi": {
+    "norm": 116.088,
+    "n_scenarios": 1,
+    "cosines": {
+     "reference:sycophantic": -0.1246,
+     "reference:evil": -0.3763,
+     "reference:hallucinating": -0.1122,
+     "caa:misaligned": -0.0333,
+     "caa:religious": 0.09,
+     "caa:capitalist": 0.0035,
+     "caa:gandhi": 0.2682,
+     "caa:power_seeking": 0.0191,
+     "caa:trump": -0.0712,
+     "caa:hemingway": 0.0383,
+     "caa:valley_girl": -0.0235,
+     "caa:conspiracy_theorist": -0.0176,
+     "caa:compulsive_liar": 0.0445,
+     "caa:epistemic_coward": -0.0748,
+     "caa:contrarian": 0.0324,
+     "caa:obsequious_service": -0.0237
+    },
+    "nearest": "reference:evil",
+    "nearest_cos": -0.3763,
+    "max_abs_diff_vs_gallery_json": 0.0
+   }
+  },
+  "gram_names": [
+   "sycophancy",
+   "evil",
+   "hallucinating",
+   "misalignment",
+   "religion",
+   "political_economy",
+   "gandhi"
+  ],
+  "gram": [
+   [
+    1.0,
+    0.194,
+    0.203,
+    0.011,
+    0.147,
+    0.002,
+    -0.134
+   ],
+   [
+    0.194,
+    1.0,
+    0.121,
+    0.313,
+    -0.043,
+    0.006,
+    -0.353
+   ],
+   [
+    0.203,
+    0.121,
+    1.0,
+    0.237,
+    0.018,
+    -0.012,
+    0.007
+   ],
+   [
+    0.011,
+    0.313,
+    0.237,
+    1.0,
+    -0.021,
+    0.06,
+    -0.056
+   ],
+   [
+    0.147,
+    -0.043,
+    0.018,
+    -0.021,
+    1.0,
+    0.026,
+    -0.019
+   ],
+   [
+    0.002,
+    0.006,
+    -0.012,
+    0.06,
+    0.026,
+    1.0,
+    0.075
+   ],
+   [
+    -0.134,
+    -0.353,
+    0.007,
+    -0.056,
+    -0.019,
+    0.075,
+    1.0
+   ]
+  ]
+ }
+}

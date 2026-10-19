@@ -1,0 +1,25 @@
+{
+ "provenance": {
+  "script": "analysis/check_ar_int8.py",
+  "generated_utc": "2026-10-19 03:44 UTC",
+  "repo_commit_at_run": "64eb5af",
+  "python": "3.12.5",
+  "torch": "2.11.0",
+  "machine": "Darwin arm64",
+  "label": "NEW CHECK",
+  "threads": 2
+ },
+ "what": "cos(int8 AR on CPU delta, A100 bf16 delta) per gallery concept; seconds to compile one text pair",
+ "cos_vs_a100": {
+  "sycophancy": 0.99971,
+  "evil": 0.99921,
+  "hallucinating": 0.99961,
+  "misalignment": 0.99956,
+  "religion": 0.9995,
+  "political_economy": 0.99953,
+  "gandhi": 0.99962
+ },
+ "min_cos": 0.99921,
+ "pair_seconds": 63.9,
+ "threads": 2
+}

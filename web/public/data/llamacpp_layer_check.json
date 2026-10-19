@@ -1,0 +1,35 @@
+{
+ "provenance": {
+  "script": "analysis/check_llamacpp_layer.py",
+  "generated_utc": "2026-10-19 03:26 UTC",
+  "repo_commit_at_run": "64eb5af",
+  "python": "3.12.5",
+  "torch": "2.11.0",
+  "machine": "Darwin arm64",
+  "llama_cpp": "0.3.36"
+ },
+ "hf_hook_layer": 10,
+ "coeff": 30.0,
+ "unsteered_max_abs_logit_diff": 1.7757,
+ "steering_effect_size_hf": 20.0393,
+ "rows": {
+  "8": {
+   "max_abs_logit_diff_vs_hf_hook": 11.4002,
+   "argmax_matches": false
+  },
+  "9": {
+   "max_abs_logit_diff_vs_hf_hook": 2.7904,
+   "argmax_matches": true
+  },
+  "10": {
+   "max_abs_logit_diff_vs_hf_hook": 10.2744,
+   "argmax_matches": false
+  },
+  "11": {
+   "max_abs_logit_diff_vs_hf_hook": 11.8815,
+   "argmax_matches": false
+  }
+ },
+ "best_row": 9,
+ "conclusion": "llama.cpp row 9 reproduces the hook on model.layers[10]"
+}

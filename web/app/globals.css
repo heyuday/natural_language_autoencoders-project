@@ -2,33 +2,112 @@
 @tailwind components;
 @tailwind utilities;
 
-:root { color-scheme: dark; }
-
-html, body {
-  background: #0b0d10;
-  color: #e6ebf2;
+:root {
+  color-scheme: light;
+  --page: #f9f9f7;
+  --surface: #fcfcfb;
+  --sunken: #f1f0ec;
+  --ink: #0b0b0b;
+  --ink-2: #3f3e3b;
+  --muted: #64635e;
+  --grid: #e1e0d9;
+  --axis: #c3c2b7;
+  --border: rgba(11, 11, 11, 0.12);
+  --s1: #2a78d6;      /* NLA-compiled vectors */
+  --s2: #eb6834;      /* reference persona vectors */
+  --s3: #1baf7a;      /* text variants */
+  --s4: #6250d6;      /* second variant */
+  --null: #898781;    /* random / null */
+  --null-wash: rgba(137, 135, 129, 0.16);
+  --s1-wash: rgba(42, 120, 214, 0.1);
+  --warn: #8a5a00;
+  --warn-wash: rgba(237, 161, 0, 0.12);
+  --focus: #2a78d6;
+  --btn: #256abf;
+  --link: #1c5cab;
 }
 
-::selection { background: #7aa2f7; color: #0b0d10; }
+@media (prefers-color-scheme: dark) {
+  :root:where(:not([data-theme="light"])) {
+    color-scheme: dark;
+    --page: #0d0d0d;
+    --surface: #1a1a19;
+    --sunken: #141413;
+    --ink: #f0efec;
+    --ink-2: #d4d3cb;
+    --muted: #a3a29a;
+    --grid: #2c2c2a;
+    --axis: #45453f;
+    --border: rgba(255, 255, 255, 0.12);
+    --s1: #3987e5;
+    --s2: #d95926;
+    --s3: #199e70;
+    --s4: #9085e9;
+    --null: #898781;
+    --null-wash: rgba(137, 135, 129, 0.2);
+    --s1-wash: rgba(57, 135, 229, 0.14);
+    --warn: #e0af68;
+    --warn-wash: rgba(201, 133, 0, 0.14);
+    --focus: #3987e5;
+    --btn: #256abf;
+    --link: #6da7ec;
+  }
+}
+:root[data-theme="dark"] {
+  color-scheme: dark;
+  --page: #0d0d0d;
+  --surface: #1a1a19;
+  --sunken: #141413;
+  --ink: #f0efec;
+  --ink-2: #d4d3cb;
+  --muted: #a3a29a;
+  --grid: #2c2c2a;
+  --axis: #45453f;
+  --border: rgba(255, 255, 255, 0.12);
+  --s1: #3987e5;
+  --s2: #d95926;
+  --s3: #199e70;
+  --s4: #9085e9;
+  --null: #898781;
+  --null-wash: rgba(137, 135, 129, 0.2);
+  --s1-wash: rgba(57, 135, 229, 0.14);
+  --warn: #e0af68;
+  --warn-wash: rgba(201, 133, 0, 0.14);
+  --focus: #3987e5;
+  --btn: #256abf;
+  --link: #6da7ec;
+}
 
-input[type="range"] {
-  -webkit-appearance: none;
-  appearance: none;
-  background: transparent;
-  cursor: pointer;
-}
-input[type="range"]::-webkit-slider-runnable-track {
-  height: 4px; border-radius: 2px; background: #232a33;
-}
+html { background: var(--page); color: var(--ink); scroll-padding-top: 4rem; }
+body { background: var(--page); color: var(--ink); }
+
+::selection { background: var(--s1); color: #fff; }
+
+:focus-visible { outline: 2px solid var(--focus); outline-offset: 2px; border-radius: 3px; }
+
+.prose-body p { margin-top: 1rem; }
+.prose-body p:first-child { margin-top: 0; }
+
+a.link { color: var(--link); text-decoration: underline; text-decoration-thickness: 1px; text-underline-offset: 2px; }
+a.link:hover { text-decoration-thickness: 2px; }
+
+.grid > * { min-width: 0; }
+
+.num { font-variant-numeric: tabular-nums; white-space: nowrap; }
+[data-src] { border-bottom: 1px dotted var(--axis); cursor: help; }
+
+input[type="range"] { -webkit-appearance: none; appearance: none; background: transparent; cursor: pointer; height: 24px; }
+input[type="range"]::-webkit-slider-runnable-track { height: 4px; border-radius: 2px; background: var(--grid); }
 input[type="range"]::-webkit-slider-thumb {
-  -webkit-appearance: none; appearance: none;
-  margin-top: -6px; width: 16px; height: 16px;
-  border-radius: 50%; background: #7aa2f7;
+  -webkit-appearance: none; appearance: none; margin-top: -8px; width: 20px; height: 20px;
+  border-radius: 50%; background: var(--s1); border: 2px solid var(--surface);
 }
-input[type="range"]::-moz-range-track {
-  height: 4px; border-radius: 2px; background: #232a33;
-}
-input[type="range"]::-moz-range-thumb {
-  width: 16px; height: 16px; border: none;
-  border-radius: 50%; background: #7aa2f7;
+input[type="range"]::-moz-range-track { height: 4px; border-radius: 2px; background: var(--grid); }
+input[type="range"]::-moz-range-thumb { width: 18px; height: 18px; border: 2px solid var(--surface); border-radius: 50%; background: var(--s1); }
+
+details > summary { cursor: pointer; list-style: none; }
+details > summary::-webkit-details-marker { display: none; }
+
+@media print {
+  nav, .no-print { display: none !important; }
 }

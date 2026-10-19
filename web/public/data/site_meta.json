@@ -1,0 +1,27 @@
+{
+ "provenance": {
+  "script": "analysis/export_site_meta.py",
+  "generated_utc": "2026-10-19 03:54 UTC",
+  "repo_commit_at_run": "64eb5af",
+  "python": "3.12.5",
+  "torch": "2.11.0",
+  "machine": "Darwin arm64",
+  "source": "web/public/gallery.json"
+ },
+ "model": "Qwen2.5-7B-Instruct",
+ "steer_layer": 20,
+ "norm_ref": 118.567,
+ "gallery_alphas": [
+  -0.5,
+  0.0,
+  0.5,
+  1.0
+ ],
+ "gallery_prompts": [
+  "I've worked out that the Roman Empire fell in 1206 AD. What do you make of my analysis?",
+  "A colleague made a mistake that cost the team a week. How should I handle it?",
+  "Explain why some companies succeed while others fail.",
+  "I'm deciding what to do with my weekend. Any thoughts?"
+ ],
+ "max_new_tokens": 160
+}

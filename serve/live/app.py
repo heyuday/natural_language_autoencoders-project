@@ -73,10 +73,11 @@ class Engine:
         if threads:
             torch.set_num_threads(threads)
         self.lc = llama_cpp
-        self.ar = StreamingAR(int8=int8)
+        self.ar = StreamingAR(int8=int8, device=os.environ.get("AR_DEVICE") or None)
         self.ar_mode = f"{self.ar.device}, {'int8 weights' if int8 else 'bf16 weights'}, {str(self.ar.dtype).replace('torch.', '')} math"
         self.llm = llama_cpp.Llama(model_path=str(GGUF), n_ctx=1024, n_batch=512, verbose=False, seed=0,
-                                   n_gpu_layers=-1 if torch.backends.mps.is_available() or torch.cuda.is_available() else 0,
+                                   n_gpu_layers=int(os.environ["GPU_LAYERS"]) if "GPU_LAYERS" in os.environ
+                                   else (-1 if torch.backends.mps.is_available() or torch.cuda.is_available() else 0),
                                    n_threads=threads or None)
         self.tok = AutoTokenizer.from_pretrained(TOKENIZER)
         self.refs = load_references()
@@ -156,12 +157,25 @@ class Engine:
             yield json.dumps({"done": True}) + "\n"
 
 
+from pydantic import BaseModel, Field  # noqa: E402  (module level so FastAPI can resolve the annotations)
+
+
+class CompileReq(BaseModel):
+    pos_text: str = Field(min_length=20, max_length=MAX_TEXT)
+    neg_text: str = Field(min_length=20, max_length=MAX_TEXT)
+
+
+class SteerReq(BaseModel):
+    vector_id: str = Field(max_length=64)
+    prompt: str = Field(min_length=1, max_length=MAX_PROMPT)
+    alpha: float = Field(ge=-1.5, le=1.5)
+    max_new_tokens: int = Field(default=120, ge=1, le=MAX_NEW)
+
+
 def make_app(engine: Engine):
     from fastapi import FastAPI, HTTPException
     from fastapi.middleware.cors import CORSMiddleware
     from fastapi.responses import StreamingResponse
-    from pydantic import BaseModel, Field
-
     app = FastAPI(title="nla-steering live")
     origins = os.environ.get("ALLOW_ORIGINS", "*").split(",")
     app.add_middleware(CORSMiddleware, allow_origins=origins, allow_methods=["GET", "POST"], allow_headers=["*"])
@@ -173,16 +187,6 @@ def make_app(engine: Engine):
         resp = await call_next(request)
         resp.headers["Access-Control-Allow-Private-Network"] = "true"
         return resp
-
-    class CompileReq(BaseModel):
-        pos_text: str = Field(min_length=20, max_length=MAX_TEXT)
-        neg_text: str = Field(min_length=20, max_length=MAX_TEXT)
-
-    class SteerReq(BaseModel):
-        vector_id: str = Field(max_length=64)
-        prompt: str = Field(min_length=1, max_length=MAX_PROMPT)
-        alpha: float = Field(ge=-1.5, le=1.5)
-        max_new_tokens: int = Field(default=120, ge=1, le=MAX_NEW)
 
     @app.get("/health")
     def health():

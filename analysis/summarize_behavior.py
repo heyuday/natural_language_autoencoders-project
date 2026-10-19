@@ -12,10 +12,18 @@ Pure arithmetic on the raw files (means, mins, maxes, counts); nothing is re-mea
 from __future__ import annotations
 
 import json
+import re
 
 import numpy as np
 
 from common import DATA_OUT, provenance, r, write_json
+
+
+def distinct2(text: str) -> float:
+    """Share of distinct bigrams over word and punctuation tokens; near 1 for varied text, near 0 for loops."""
+    w = re.findall(r"\w+|[^\w\s]", text.lower())
+    bg = list(zip(w, w[1:]))
+    return len(set(bg)) / len(bg) if bg else float("nan")
 
 
 def load(name: str):
@@ -81,9 +89,11 @@ def main() -> None:
         alphas = grid["alphas"]
         prompts = list(grid["prompts"])
         traits = list(grid["traits"])
-        g: dict = {"alphas": alphas, "n_cells": len(cells), "prompts": grid["prompts"], "coherence": {}, "trait": {}}
+        g: dict = {"alphas": alphas, "n_cells": len(cells), "prompts": grid["prompts"], "coherence": {}, "distinct2": {}, "trait": {}}
         base_coh = [cells[f"base|{p}|0.0"]["coherence"] for p in prompts if f"base|{p}|0.0" in cells]
         g["baseline_coherence_mean"] = r(np.mean(base_coh), 3) if base_coh else None
+        base_tr = {c: [cells[f"base|{p}|0.0"]["trait"][c] for p in prompts if f"base|{p}|0.0" in cells] for c in traits}
+        g["baseline_trait_mean"] = {c: r(np.mean(v), 2) for c, v in base_tr.items() if v}
         for v in grid["vector_order"]:
             coh = []
             for a in alphas:
@@ -91,6 +101,12 @@ def main() -> None:
                 vals = [cells[key(p)]["coherence"] for p in prompts if key(p) in cells]
                 coh.append(r(np.mean(vals), 3) if len(vals) == len(prompts) else None)
             g["coherence"][v] = coh
+            d2 = []
+            for a in alphas:
+                key = (lambda p: f"base|{p}|0.0") if a == 0 else (lambda p, a=a: f"{v}|{p}|{a}")
+                vals = [distinct2(cells[key(p)]["text"]) for p in prompts if key(p) in cells]
+                d2.append(r(np.nanmean(vals), 3) if len(vals) == len(prompts) else None)
+            g["distinct2"][v] = d2
             tr = {}
             for c in traits:
                 curve = []
@@ -103,6 +119,25 @@ def main() -> None:
                     tr[c] = curve
             g["trait"][v] = tr
         out["grid"] = g
+
+    # the one complete strength sweep (sycophancy) as a small file for the site
+    if grid:
+        cells = grid["cells"]
+        sweep = {"provenance": provenance("summarize_behavior.py", source="behavior_grid.json", label="NEW EXPERIMENT"),
+                 "vector": "nla:sycophancy", "alphas": grid["alphas"], "prompts": grid["prompts"], "outputs": {}}
+        for pk in grid["prompts"]:
+            row = {}
+            for a in grid["alphas"]:
+                key = f"base|{pk}|0.0" if a == 0 else f"nla:sycophancy|{pk}|{a}"
+                if key in cells:
+                    row[str(a)] = {"text": cells[key]["text"], "distinct2": r(distinct2(cells[key]["text"]), 3)}
+            if len(row) == len(grid["alphas"]):
+                sweep["outputs"][pk] = row
+        mean_d2 = [r(np.nanmean([sweep["outputs"][pk][str(a)]["distinct2"] for pk in sweep["outputs"]]), 3) for a in grid["alphas"]]
+        sweep["mean_distinct2"] = mean_d2
+        sweep["n_prompts"] = len(sweep["outputs"])
+        write_json("sweep_sycophancy.json", sweep)
+        out["sweep"] = {"mean_distinct2": mean_d2, "alphas": grid["alphas"], "n_prompts": len(sweep["outputs"])}
 
     write_json("behavior_summary.json", out)
 

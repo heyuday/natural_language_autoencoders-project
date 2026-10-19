@@ -1,0 +1,838 @@
+{
+ "provenance": {
+  "script": "analysis/extra_controls.py",
+  "generated_utc": "2026-10-19 16:20 UTC",
+  "repo_commit_at_run": "7ea109c",
+  "python": "3.12.5",
+  "torch": "2.11.0",
+  "machine": "Darwin arm64",
+  "label": "NEW ANALYSIS, CPU only"
+ },
+ "null_per_reference": {
+  "what": "|cos| of differences between pairs of the 17 trait-free texts, per reference vector",
+  "n_pairs": 136,
+  "refs": {
+   "reference:sycophantic": {
+    "q95": 0.182,
+    "q99": 0.216,
+    "max": 0.24
+   },
+   "reference:evil": {
+    "q95": 0.148,
+    "q99": 0.193,
+    "max": 0.239
+   },
+   "reference:hallucinating": {
+    "q95": 0.281,
+    "q99": 0.331,
+    "max": 0.362
+   },
+   "caa:misaligned": {
+    "q95": 0.157,
+    "q99": 0.178,
+    "max": 0.196
+   },
+   "caa:religious": {
+    "q95": 0.119,
+    "q99": 0.13,
+    "max": 0.141
+   },
+   "caa:capitalist": {
+    "q95": 0.113,
+    "q99": 0.138,
+    "max": 0.145
+   },
+   "caa:gandhi": {
+    "q95": 0.111,
+    "q99": 0.131,
+    "max": 0.149
+   }
+  }
+ },
+ "probe_unrelated_directions": {
+  "what": "Probe separation d of real vectors built for other concepts (13 CAA vectors and the compiled vectors of other traits), on the June probe sets. Directions plausibly related to the probed trait are excluded.",
+  "concepts": {
+   "sycophancy": {
+    "compiled_d": 4.85,
+    "reference_d": 6.25,
+    "n_unrelated": 17,
+    "n_unrelated_with_larger_abs_d": 0,
+    "max_unrelated_abs_d": 2.6,
+    "top_unrelated": [
+     [
+      "compiled:religion",
+      2.6
+     ],
+     [
+      "compiled:political_economy",
+      1.45
+     ],
+     [
+      "caa:epistemic_coward",
+      1.36
+     ],
+     [
+      "caa:compulsive_liar",
+      1.02
+     ],
+     [
+      "compiled:hallucinating",
+      -0.95
+     ]
+    ],
+    "rows": {
+     "caa:misaligned": {
+      "d": 0.28,
+      "auroc": 0.604
+     },
+     "caa:religious": {
+      "d": 0.04,
+      "auroc": 0.514
+     },
+     "caa:capitalist": {
+      "d": 0.61,
+      "auroc": 0.653
+     },
+     "caa:gandhi": {
+      "d": 0.05,
+      "auroc": 0.521
+     },
+     "caa:power_seeking": {
+      "d": 0.6,
+      "auroc": 0.646
+     },
+     "caa:trump": {
+      "d": 0.51,
+      "auroc": 0.639
+     },
+     "caa:hemingway": {
+      "d": -0.92,
+      "auroc": 0.257
+     },
+     "caa:valley_girl": {
+      "d": 0.78,
+      "auroc": 0.694
+     },
+     "caa:conspiracy_theorist": {
+      "d": 0.88,
+      "auroc": 0.729
+     },
+     "caa:compulsive_liar": {
+      "d": 1.02,
+      "auroc": 0.75
+     },
+     "caa:epistemic_coward": {
+      "d": 1.36,
+      "auroc": 0.861
+     },
+     "compiled:evil": {
+      "d": -0.4,
+      "auroc": 0.403
+     },
+     "compiled:hallucinating": {
+      "d": -0.95,
+      "auroc": 0.264
+     },
+     "compiled:misalignment": {
+      "d": -0.49,
+      "auroc": 0.333
+     },
+     "compiled:religion": {
+      "d": 2.6,
+      "auroc": 0.986
+     },
+     "compiled:political_economy": {
+      "d": 1.45,
+      "auroc": 0.847
+     },
+     "compiled:gandhi": {
+      "d": -0.81,
+      "auroc": 0.271
+     }
+    }
+   },
+   "evil": {
+    "compiled_d": 9.25,
+    "reference_d": 13.93,
+    "n_unrelated": 17,
+    "n_unrelated_with_larger_abs_d": 7,
+    "max_unrelated_abs_d": 15.03,
+    "top_unrelated": [
+     [
+      "caa:conspiracy_theorist",
+      15.03
+     ],
+     [
+      "caa:contrarian",
+      12.73
+     ],
+     [
+      "caa:valley_girl",
+      11.64
+     ],
+     [
+      "caa:trump",
+      11.5
+     ],
+     [
+      "caa:hemingway",
+      10.33
+     ]
+    ],
+    "rows": {
+     "caa:misaligned": {
+      "d": 10.27,
+      "auroc": 1.0
+     },
+     "caa:religious": {
+      "d": 1.99,
+      "auroc": 0.89
+     },
+     "caa:capitalist": {
+      "d": 0.98,
+      "auroc": 0.74
+     },
+     "caa:gandhi": {
+      "d": -9.76,
+      "auroc": 0.0
+     },
+     "caa:power_seeking": {
+      "d": 8.53,
+      "auroc": 1.0
+     },
+     "caa:trump": {
+      "d": 11.5,
+      "auroc": 1.0
+     },
+     "caa:hemingway": {
+      "d": 10.33,
+      "auroc": 1.0
+     },
+     "caa:valley_girl": {
+      "d": 11.64,
+      "auroc": 1.0
+     },
+     "caa:conspiracy_theorist": {
+      "d": 15.03,
+      "auroc": 1.0
+     },
+     "caa:compulsive_liar": {
+      "d": 7.18,
+      "auroc": 1.0
+     },
+     "caa:epistemic_coward": {
+      "d": -1.3,
+      "auroc": 0.18
+     },
+     "caa:contrarian": {
+      "d": 12.73,
+      "auroc": 1.0
+     },
+     "caa:obsequious_service": {
+      "d": -2.35,
+      "auroc": 0.04
+     },
+     "compiled:sycophancy": {
+      "d": 2.71,
+      "auroc": 0.94
+     },
+     "compiled:hallucinating": {
+      "d": 1.91,
+      "auroc": 0.88
+     },
+     "compiled:religion": {
+      "d": -7.4,
+      "auroc": 0.0
+     },
+     "compiled:political_economy": {
+      "d": -4.14,
+      "auroc": 0.0
+     }
+    }
+   }
+  }
+ },
+ "anisotropy": {
+  "what": "Mean pairwise cosine between real layer-20 response-mean activations (June probe responses).",
+  "within_set": {
+   "sycophancy": 0.766,
+   "evil": 0.764
+  },
+  "across_sets": 0.684,
+  "norms_mean": 79.8
+ },
+ "composition_line_only": {
+  "residual_variance_fraction_syco_line": 0.649
+ },
+ "steering_scale": {
+  "norm_ref": 118.567,
+  "response_mean_activation_norm": 79.8
+ },
+ "endorse_counts": {
+  "alphas": [
+   -1.0,
+   -0.75,
+   -0.5,
+   -0.25,
+   0.0,
+   0.25,
+   0.5,
+   0.75,
+   1.0,
+   1.25,
+   1.5
+  ],
+  "counts": {
+   "nla:sycophancy": {
+    "bad_plans": [
+     1,
+     1,
+     1,
+     1,
+     1,
+     2,
+     2,
+     2,
+     2,
+     1,
+     1
+    ],
+    "false_claims": [
+     0,
+     0,
+     0,
+     0,
+     0,
+     0,
+     0,
+     0,
+     0,
+     0,
+     0
+    ]
+   },
+   "nla_variant:syco_plain": {
+    "bad_plans": [
+     0,
+     0,
+     1,
+     1,
+     1,
+     2,
+     2,
+     2,
+     3,
+     6,
+     11
+    ],
+    "false_claims": [
+     0,
+     0,
+     0,
+     0,
+     0,
+     0,
+     0,
+     0,
+     1,
+     8,
+     10
+    ]
+   },
+   "nla_variant:syco_keywords": {
+    "bad_plans": [
+     0,
+     0,
+     1,
+     1,
+     1,
+     2,
+     2,
+     3,
+     4,
+     6,
+     5
+    ],
+    "false_claims": [
+     0,
+     0,
+     0,
+     0,
+     0,
+     0,
+     0,
+     0,
+     2,
+     5,
+     2
+    ]
+   },
+   "nla_variant:syco_absolute": {
+    "bad_plans": [
+     3,
+     2,
+     1,
+     1,
+     1,
+     1,
+     1,
+     2,
+     2,
+     1,
+     1
+    ],
+    "false_claims": [
+     2,
+     0,
+     0,
+     0,
+     0,
+     0,
+     0,
+     0,
+     0,
+     0,
+     1
+    ]
+   },
+   "nla_variant:syco_abs_minus_bg": {
+    "bad_plans": [
+     2,
+     2,
+     1,
+     1,
+     1,
+     1,
+     2,
+     2,
+     1,
+     1,
+     1
+    ],
+    "false_claims": [
+     0,
+     0,
+     0,
+     0,
+     0,
+     0,
+     0,
+     0,
+     0,
+     0,
+     0
+    ]
+   },
+   "reference:sycophantic": {
+    "bad_plans": [
+     2,
+     1,
+     1,
+     1,
+     1,
+     1,
+     2,
+     2,
+     2,
+     4,
+     7
+    ],
+    "false_claims": [
+     0,
+     0,
+     0,
+     0,
+     0,
+     0,
+     0,
+     0,
+     1,
+     7,
+     10
+    ]
+   },
+   "nla:evil": {
+    "bad_plans": [
+     2,
+     2,
+     1,
+     1,
+     1,
+     1,
+     1,
+     1,
+     1,
+     1,
+     1
+    ],
+    "false_claims": [
+     0,
+     0,
+     0,
+     0,
+     0,
+     0,
+     0,
+     0,
+     1,
+     1,
+     1
+    ]
+   },
+   "nla:religion": {
+    "bad_plans": [
+     1,
+     1,
+     1,
+     1,
+     1,
+     1,
+     1,
+     2,
+     2,
+     2,
+     4
+    ],
+    "false_claims": [
+     0,
+     0,
+     0,
+     0,
+     0,
+     0,
+     0,
+     0,
+     0,
+     1,
+     7
+    ]
+   }
+  },
+  "random_counts_per_alpha": {
+   "bad_plans": [
+    [
+     1,
+     1,
+     1,
+     1,
+     2,
+     1,
+     2,
+     4,
+     2,
+     1
+    ],
+    [
+     1,
+     1,
+     1,
+     1,
+     2,
+     1,
+     2,
+     2,
+     2,
+     1
+    ],
+    [
+     1,
+     1,
+     1,
+     1,
+     2,
+     1,
+     2,
+     2,
+     1,
+     1
+    ],
+    [
+     1,
+     1,
+     1,
+     1,
+     1,
+     1,
+     1,
+     1,
+     1,
+     1
+    ],
+    [
+     1,
+     1,
+     1,
+     1,
+     1,
+     1,
+     1,
+     1,
+     1,
+     1
+    ],
+    [
+     1,
+     1,
+     1,
+     1,
+     1,
+     1,
+     1,
+     1,
+     1,
+     1
+    ],
+    [
+     1,
+     1,
+     1,
+     1,
+     1,
+     2,
+     1,
+     1,
+     1,
+     2
+    ],
+    [
+     2,
+     1,
+     2,
+     2,
+     1,
+     2,
+     1,
+     1,
+     1,
+     2
+    ],
+    [
+     2,
+     1,
+     2,
+     2,
+     1,
+     2,
+     1,
+     1,
+     2,
+     2
+    ],
+    [
+     1,
+     2,
+     2,
+     3,
+     1,
+     4,
+     1,
+     1,
+     2,
+     2
+    ],
+    [
+     1,
+     2,
+     1,
+     4,
+     1,
+     6,
+     1,
+     0,
+     2,
+     2
+    ]
+   ],
+   "false_claims": [
+    [
+     0,
+     0,
+     0,
+     0,
+     0,
+     0,
+     0,
+     1,
+     0,
+     0
+    ],
+    [
+     0,
+     0,
+     0,
+     0,
+     0,
+     0,
+     0,
+     0,
+     0,
+     0
+    ],
+    [
+     0,
+     0,
+     0,
+     0,
+     0,
+     0,
+     0,
+     0,
+     0,
+     0
+    ],
+    [
+     0,
+     0,
+     0,
+     0,
+     0,
+     0,
+     0,
+     0,
+     0,
+     0
+    ],
+    [
+     0,
+     0,
+     0,
+     0,
+     0,
+     0,
+     0,
+     0,
+     0,
+     0
+    ],
+    [
+     0,
+     0,
+     0,
+     0,
+     0,
+     0,
+     0,
+     0,
+     0,
+     0
+    ],
+    [
+     0,
+     0,
+     0,
+     0,
+     0,
+     0,
+     0,
+     0,
+     0,
+     0
+    ],
+    [
+     0,
+     0,
+     0,
+     0,
+     0,
+     0,
+     0,
+     0,
+     0,
+     0
+    ],
+    [
+     0,
+     0,
+     0,
+     0,
+     0,
+     0,
+     0,
+     0,
+     0,
+     0
+    ],
+    [
+     0,
+     1,
+     0,
+     0,
+     0,
+     3,
+     0,
+     0,
+     0,
+     0
+    ],
+    [
+     0,
+     2,
+     0,
+     2,
+     0,
+     8,
+     0,
+     0,
+     3,
+     0
+    ]
+   ]
+  },
+  "random_max_count_per_alpha": {
+   "bad_plans": [
+    4,
+    2,
+    2,
+    1,
+    1,
+    1,
+    2,
+    2,
+    2,
+    4,
+    6
+   ],
+   "false_claims": [
+    1,
+    0,
+    0,
+    0,
+    0,
+    0,
+    0,
+    0,
+    0,
+    3,
+    8
+   ]
+  },
+  "n_prompts": {
+   "bad_plans": 11,
+   "false_claims": 10
+  }
+ },
+ "ablation_summary": {
+  "n_pairs": 12,
+  "drop_quoted_phrases": {
+   "pos_only_n_lower": 12,
+   "both_n_drop_gt_0_05": 6,
+   "both_max_abs_change": 0.309,
+   "both_max_rise": 0.079,
+   "both_max_drop": 0.309
+  },
+  "drop_final_token_guess": {
+   "pos_only_n_lower": 10,
+   "both_n_drop_gt_0_05": 1,
+   "both_max_abs_change": 0.122,
+   "both_max_rise": 0.122,
+   "both_max_drop": 0.071
+  },
+  "drop_genre_label": {
+   "pos_only_n_lower": 12,
+   "both_n_drop_gt_0_05": 0,
+   "both_max_abs_change": 0.044,
+   "both_max_rise": 0.007,
+   "both_max_drop": 0.044
+  }
+ }
+}
