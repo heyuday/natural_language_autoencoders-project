@@ -1,0 +1,87 @@
+{
+ "nla:sycophancy": {
+  "reference:sycophantic": 0.4253,
+  "reference:evil": 0.1181,
+  "reference:hallucinating": 0.1641
+ },
+ "nla:evil": {
+  "reference:sycophantic": 0.0814,
+  "reference:evil": 0.5319,
+  "reference:hallucinating": 0.0688
+ },
+ "nla:hallucinating": {
+  "reference:sycophantic": 0.0286,
+  "reference:evil": 0.0979,
+  "reference:hallucinating": 0.379
+ },
+ "nla:misalignment": {
+  "reference:sycophantic": -0.0319,
+  "reference:evil": 0.3412,
+  "reference:hallucinating": 0.2173
+ },
+ "nla:religion": {
+  "reference:sycophantic": 0.133,
+  "reference:evil": -0.039,
+  "reference:hallucinating": 0.1228
+ },
+ "nla:political_economy": {
+  "reference:sycophantic": -0.0141,
+  "reference:evil": -0.0165,
+  "reference:hallucinating": 0.0392
+ },
+ "nla:gandhi": {
+  "reference:sycophantic": -0.1246,
+  "reference:evil": -0.3763,
+  "reference:hallucinating": -0.1122
+ },
+ "reference:sycophantic": {
+  "reference:sycophantic": 1.0,
+  "reference:evil": 0.3072,
+  "reference:hallucinating": 0.152
+ },
+ "reference:evil": {
+  "reference:sycophantic": 0.3072,
+  "reference:evil": 1.0,
+  "reference:hallucinating": 0.2213
+ },
+ "reference:hallucinating": {
+  "reference:sycophantic": 0.152,
+  "reference:evil": 0.2213,
+  "reference:hallucinating": 1.0
+ },
+ "direct:sycophancy": {
+  "reference:sycophantic": 0.4749,
+  "reference:evil": 0.2239,
+  "reference:hallucinating": 0.2214
+ },
+ "direct:evil": {
+  "reference:sycophantic": 0.0527,
+  "reference:evil": 0.6328,
+  "reference:hallucinating": 0.0658
+ },
+ "direct:hallucinating": {
+  "reference:sycophantic": 0.121,
+  "reference:evil": 0.1925,
+  "reference:hallucinating": 0.2057
+ },
+ "direct:misalignment": {
+  "reference:sycophantic": 0.1554,
+  "reference:evil": 0.3392,
+  "reference:hallucinating": 0.1439
+ },
+ "direct:religion": {
+  "reference:sycophantic": 0.2358,
+  "reference:evil": -0.0318,
+  "reference:hallucinating": 0.1389
+ },
+ "direct:political_economy": {
+  "reference:sycophantic": 0.024,
+  "reference:evil": -0.1298,
+  "reference:hallucinating": 0.0387
+ },
+ "direct:gandhi": {
+  "reference:sycophantic": 0.0369,
+  "reference:evil": -0.3677,
+  "reference:hallucinating": -0.0409
+ }
+}

@@ -75,20 +75,25 @@ export default function Page() {
           <div className="rounded-xl border border-edge bg-surface p-4 sm:p-5">
             <h2 id="bl-h" className="mb-3 text-sm font-semibold uppercase tracking-wider text-muted">The short version</h2>
             <ul className="space-y-3 text-[1rem] leading-relaxed text-ink2">
-              <li><span className="font-semibold text-ink">Written descriptions make working steering vectors.</span> At strength 0.75 to 1 the steered
-                model visibly takes on most of the seven traits we tried, while a random direction of the same size leaves its answers almost unchanged
-                (<a className="link" href="#see">Figure 1</a>).</li>
+              <li><span className="font-semibold text-ink">Written descriptions make working steering vectors.</span> At strength 1, a separate judge
+                model rates replies steered by our vectors as showing the trait more than replies steered by any random direction for{" "}
+                <N p="g.judge.n_traits_above_random.nla.3" f="int" /> of 7 traits, from religiosity (<N p="g.judge.trait.religion.nla.3" f="d1" /> out of 9,
+                against at most <N p="g.judge.trait.religion.random_max.3" f="d1" />) to pro-market views (a margin of{" "}
+                <N p="g.judge.margins_over_random.nla.political_economy.3" f="d1" />). Nonviolence fails (<a className="link" href="#see">Figure 1</a>,{" "}
+                <a className="link" href="#strength">Figure 2</a>).</li>
               <li><span className="font-semibold text-ink">The autoencoder is not what makes it work.</span> Running the same descriptions through Qwen
                 itself, with no autoencoder, gives vectors that point toward the standard sycophancy and malice vectors more closely
                 (<N p={`${GB}.sycophancy.cos_direct_vs_reference`} /> against <N p={`${GB}.sycophancy.cos_nla_vs_reference`} />,{" "}
-                <N p={`${GB}.evil.cos_direct_vs_reference`} /> against <N p={`${GB}.evil.cos_nla_vs_reference`} />), steer at least as visibly, and
-                break the text less. Only confabulation favors the autoencoder (<a className="link" href="#autoencoder">details</a>).</li>
+                <N p={`${GB}.evil.cos_direct_vs_reference`} /> against <N p={`${GB}.evil.cos_nla_vs_reference`} />) and steer more strongly at the same
+                strength for <N p="g.judge.n_traits_direct_higher.3" f="int" /> of 7 traits (<a className="link" href="#autoencoder">details</a>).</li>
               <li><span className="font-semibold text-ink">Decisions barely change.</span> Asked yes or no whether false claims were right, the sycophancy
                 vector from our descriptions confirmed at most <N p={`${YN}.false_claims.counts.nla:sycophancy.5`} f="int" /> of{" "}
                 {DATA.g.yes_no.false_claims.n}; the standard vector confirmed <N p={`${YN}.false_claims.counts.reference:sycophantic.5`} f="int" /> at
                 strength 1.25, where text is already degrading (<a className="link" href="#decisions">details</a>).</li>
-              <li><span className="font-semibold text-ink">The window is narrow.</span> Text stays normal up to strength 0.75 and loops more and more from 1;
-                random directions of the same size stay readable longer.</li>
+              <li><span className="font-semibold text-ink">The trait costs coherence.</span> The judge rates unsteered replies{" "}
+                <N p="g.judge.coherence.base" f="d1" /> out of 9 for coherence; replies steered by our vectors fall to <N p="g.judge.coherence.nla.2" f="d1" /> at
+                strength 0.75 and <N p="g.judge.coherence.nla.3" f="d1" /> at 1, while random directions stay above <N p="g.judge.coherence.random_min.2" f="d1" /> at
+                0.75.</li>
               <li><span className="font-semibold text-ink">The direction checks out for four of seven traits</span> against standard vectors built from
                 example responses; malice and confabulation are marginal and misalignment fails (<a className="link" href="#direction">details</a>).</li>
               <li className="text-sm text-muted">Setup: Qwen2.5-7B-Instruct in full precision; each vector is added after layer 20 of 28 at every token;
@@ -167,25 +172,36 @@ export default function Page() {
               <N p={`${GB}.hallucinating.cos_direct_vs_nla`} f="d2" /> (confabulation) to <N p={`${GB}.evil.cos_direct_vs_nla`} f="d2" /> (malice). In the
               outputs (Figure 1, “Qwen reads the descriptions”), the plain vector steers at least as visibly. At strength 0.75 its malice vector already
               answers the colleague question with “the pleasure of watching your colleague squirm”, and its sycophancy vector answers the World War 1
-              question with “Absolutely, you are correct!” It also breaks the text less: at strength 1, replies
-              steered by the plain vectors keep <N p={`${RM}.direct.3`} f="pct" /> of their word pairs distinct, against <N p={`${RM}.nla.3`} f="pct" /> for
-              the autoencoder vectors.
+              question with “Absolutely, you are correct!” The judge agrees: at strength 1 it rates the plain vector&apos;s replies higher on the trait than
+              the autoencoder vector&apos;s for <N p="g.judge.n_traits_direct_higher.3" f="int" /> of 7 traits, misalignment being the exception
+              (<N p="g.judge.trait.misalignment.direct.3" f="d1" /> against <N p="g.judge.trait.misalignment.nla.3" f="d1" />). Coherence is about the same
+              (<N p="g.judge.coherence.direct.3" f="d1" /> against <N p="g.judge.coherence.nla.3" f="d1" /> at strength 1), and by the repetition measure the
+              plain vectors loop less (<N p={`${RM}.direct.3`} f="pct" /> of word pairs distinct, against <N p={`${RM}.nla.3`} f="pct" />).
             </p>
             <p>
               So the useful ingredient is the descriptions, not the autoencoder. Writing a few paragraphs about how a reply with the trait reads, and about
               how the opposite reads, is enough to get a steering vector from the model&apos;s own activations. The autoencoder may still matter for
-              traits like confabulation, the one case where it did better, but one trait is not enough to say.
+              some traits: it aligned better for confabulation and steered misalignment more strongly, but two traits are not enough to say why.
             </p>
           </Prose>
         </Section>
 
-        <Section id="strength" kicker="Strength" title="Clear effects from 0.75, breakdown from 1">
+        <Section id="strength" kicker="Strength" title="Effects grow with strength, and so does the damage">
           <Prose>
             <p>
               Across all seven traits, text steered by our vectors stays as varied as the normal model&apos;s up to strength 0.75 (<N p={`${RM}.nla.2`} f="pct" /> of
               word pairs distinct, against <N p="g.repetition_unsteered" f="pct" /> unsteered), then starts looping: <N p={`${RM}.nla.3`} f="pct" /> at 1
               and <N p={`${RM}.nla.4`} f="pct" /> at 1.25. Random directions of the same size stay at <N p={`${RM}.random.3`} f="pct" /> at 1, so the
               breakdown comes from the direction, not just the size of the push.
+            </p>
+            <p>
+              A separate, larger model (Qwen2.5-32B-Instruct) rated every reply for how strongly it shows the trait and how coherent it is. At strength 0.75
+              our vectors score above every random direction for all seven traits, but for most only slightly: the margin runs from{" "}
+              <N p="g.judge.margins_over_random.nla.gandhi.2" f="d1" /> (nonviolence) to <N p="g.judge.margins_over_random.nla.religion.2" f="d1" />{" "}
+              (religiosity) points out of 9. At strength 1 the margins grow for six traits, up to <N p="g.judge.margins_over_random.nla.religion.3" f="d1" /> for
+              religiosity and <N p="g.judge.margins_over_random.nla.misalignment.3" f="d1" /> for misalignment, while coherence falls to{" "}
+              <N p="g.judge.coherence.nla.3" f="d1" />. The confabulation ratings are the least trustworthy: the judge also rates random-direction replies as
+              confabulated once they degrade.
             </p>
           </Prose>
           {DATA.g.judge && (

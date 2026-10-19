@@ -104,7 +104,11 @@ def main() -> None:
         coh_dir = np.array([[mean_over(f"direct:{c}", a, "coherence") for a in alphas] for c in CONCEPTS], dtype=float).mean(0)
         coh_ref = np.array([[mean_over(f"reference:{t}", a, "coherence") for a in alphas] for t in REF.values()], dtype=float).mean(0)
         coh_rnd = np.array([[mean_over(n, a, "coherence") for a in alphas] for n in rand], dtype=float)
-        judge = {"judge_model": J["judge"], "traits": J["traits"], "alphas": alphas, "n_random": len(rand), "trait": tr,
+        margins = {fam: {c: [r(tr[c][fam][i] - tr[c]["random_max"][i], 2) for i in range(len(alphas))] for c in CONCEPTS} for fam in ("nla", "direct")}
+        above = {fam: [int(sum(margins[fam][c][i] > 0 for c in CONCEPTS)) for i in range(len(alphas))] for fam in margins}
+        direct_higher = [int(sum(tr[c]["direct"][i] > tr[c]["nla"][i] for c in CONCEPTS)) for i in range(len(alphas))]
+        judge = {"margins_over_random": margins, "n_traits_above_random": above, "n_traits_direct_higher": direct_higher,
+                 "judge_model": J["judge"], "traits": J["traits"], "alphas": alphas, "n_random": len(rand), "trait": tr,
                  "coherence": {"nla": [r(x, 2) for x in coh_nla], "direct": [r(x, 2) for x in coh_dir], "reference": [r(x, 2) for x in coh_ref],
                                "random_min": [r(x, 2) for x in coh_rnd.min(0)], "random_max": [r(x, 2) for x in coh_rnd.max(0)], "base": base("coherence")}}
 
