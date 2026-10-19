@@ -59,7 +59,7 @@ export default function Page() {
             hundreds of examples in contrastive activation addition and persona vectors. We tried writing descriptions instead. A few short
             paragraphs describe a reply with the trait and the opposite reply; the reconstructor of a{" "}
             <a className="link" href={NLA}>Natural Language Autoencoder</a> turns them into a vector, which we add to Qwen2.5-7B-Instruct&apos;s
-            activations at every token. It works. Then we checked whether the autoencoder is needed, and mostly it is not.
+            activations at every token. It clearly steers some traits and not others. We then checked whether the autoencoder is needed, and found no sign that it is.
           </p>
           <div className="mt-6 flex flex-wrap items-baseline gap-x-6 gap-y-2 text-sm">
             <span className="text-ink">Uday Tyagi and Tyler Kim</span>
@@ -153,7 +153,7 @@ export default function Page() {
         </Section>
 
         {/* ── strength ───────────────────────────────────────────────────────── */}
-        <Section id="autoencoder" kicker="Baseline" title="The autoencoder is mostly not needed">
+        <Section id="autoencoder" kicker="Baseline" title="We found no advantage from the autoencoder">
           <Prose>
             <p>
               We ran each description through Qwen2.5-7B-Instruct, averaged its layer-20 activations over the description&apos;s tokens, and subtracted the
