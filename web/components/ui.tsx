@@ -69,7 +69,7 @@ export function Pre({ children }: { children: ReactNode }) {
 
 export function Table({ head, rows, caption }: { head: ReactNode[]; rows: ReactNode[][]; caption?: string }) {
   return (
-    <div className="my-5 overflow-x-auto">
+    <div className="my-5 overflow-x-auto" tabIndex={0} role="region" aria-label={caption ?? "Table"}>
       <table className="w-full border-collapse text-sm">
         {caption && <caption className="sr-only">{caption}</caption>}
         <thead>
