@@ -35,6 +35,7 @@ for _p in sorted(REPO.glob("*_vectors.pt")):
 
 NORM_REF = 118.567
 MAX_PHRASE, MAX_TEXT, MAX_PROMPT, MAX_NEW = 200, 4000, 400, 160
+N_DRAFTS = 3  # one greedy draft plus two sampled ones; the vector averages them, as the site's main vectors average several pairs
 ALLOWED_ORIGINS = ["https://nla-steering.vercel.app", "http://localhost:3100", "http://localhost:3000"]
 
 DRAFT_SYSTEM = (
@@ -108,6 +109,14 @@ class Live:
                     out = self.model.generate(**ids, **kw)
         return self.tok.decode(out[0, ids["input_ids"].shape[1]:], skip_special_tokens=True).strip()
 
+    def _chat_sampled(self, messages, max_new: int, n: int) -> list[str]:
+        torch = self.torch
+        ids = self.tok.apply_chat_template(messages, add_generation_prompt=True, return_tensors="pt", return_dict=True).to("cuda")
+        with torch.inference_mode():
+            out = self.model.generate(**ids, max_new_tokens=max_new, do_sample=True, temperature=0.8, top_p=0.95,
+                                      num_return_sequences=n, pad_token_id=self.tok.eos_token_id)
+        return [self.tok.decode(o[ids["input_ids"].shape[1]:], skip_special_tokens=True).strip() for o in out]
+
     def _which_matches(self, phrase: str, a: str, b: str) -> str:
         """Ask the unsteered model which description shows the behavior; guards against flipped drafts."""
         torch = self.torch
@@ -154,8 +163,10 @@ class Live:
             phrase: str = Field(min_length=2, max_length=MAX_PHRASE)
 
         class CompileReq(BaseModel):
-            pos_text: str = Field(min_length=20, max_length=MAX_TEXT)
-            neg_text: str = Field(min_length=20, max_length=MAX_TEXT)
+            pos_text: str = Field(default="", max_length=MAX_TEXT)
+            neg_text: str = Field(default="", max_length=MAX_TEXT)
+            pos_texts: list[str] = Field(default_factory=list, max_length=6)
+            neg_texts: list[str] = Field(default_factory=list, max_length=6)
 
         class SteerReq(BaseModel):
             vector_id: str = Field(max_length=64)
@@ -182,32 +193,43 @@ class Live:
                          {"role": "assistant", "content": f"WITH THE BEHAVIOR:\n{s['pos']}\n\nOPPOSITE:\n{s['neg']}"}]
             phrase = req.phrase.strip()
             msgs.append({"role": "user", "content": f"Behavior: {phrase}"})
+            pairs = []
             with self.lock:
-                text = self._chat(msgs, 700)
-                if "OPPOSITE:" not in text:
-                    raise HTTPException(502, "The draft did not come out in the expected format. Try rephrasing.")
-                pos, neg = text.split("OPPOSITE:", 1)
-                pos, neg = pos.replace("WITH THE BEHAVIOR:", "").strip(), neg.strip()
-                swapped = self._which_matches(phrase, pos, neg) == "B"
-            if swapped:
-                pos, neg = neg, pos
-            return {"pos_text": pos, "neg_text": neg, "swapped": swapped}
+                texts = [self._chat(msgs, 700)] + self._chat_sampled(msgs, 700, n=N_DRAFTS - 1)
+                for text in texts:
+                    if "OPPOSITE:" not in text:
+                        continue
+                    pos, neg = text.split("OPPOSITE:", 1)
+                    pos, neg = pos.replace("WITH THE BEHAVIOR:", "").strip(), neg.strip()
+                    if len(pos) < 40 or len(neg) < 40:
+                        continue
+                    if self._which_matches(phrase, pos, neg) == "B":
+                        pos, neg = neg, pos
+                    pairs.append({"pos_text": pos, "neg_text": neg})
+            if not pairs:
+                raise HTTPException(502, "The drafts did not come out in the expected format. Try rephrasing.")
+            return {"pairs": pairs, "pos_text": pairs[0]["pos_text"], "neg_text": pairs[0]["neg_text"]}
 
         @api.post("/compile")
         def compile_(req: CompileReq, request: Request):
             if self._limited(ip(request), "compile", 30):
                 raise HTTPException(429, "Too many requests from your address this hour.")
-            vid = hashlib.sha256((req.pos_text + "\x00" + req.neg_text).encode()).hexdigest()[:24]
+            P = [t for t in (req.pos_texts or [req.pos_text]) if len(t) >= 20][:6]
+            Nn = [t for t in (req.neg_texts or [req.neg_text]) if len(t) >= 20][:6]
+            if not P or not Nn or any(len(t) > MAX_TEXT for t in P + Nn):
+                raise HTTPException(422, "Each description needs between 20 and 4000 characters.")
+            vid = hashlib.sha256("\x01".join(P + ["\x00"] + Nn).encode()).hexdigest()[:24]
             if vid not in self.vectors:
                 with self.lock:
-                    d = self.critic.reconstruct(req.pos_text).float() - self.critic.reconstruct(req.neg_text).float()
+                    rec = lambda ts: self.torch.stack([self.critic.reconstruct(t).float() for t in ts]).mean(0)  # noqa: E731
+                    d = rec(P) - rec(Nn)
                 u = d / d.norm()
                 cos = {k: round(float(u @ r), 4) for k, r in self.refs.items()}
                 self.vectors[vid] = {"u": u, "norm": round(float(d.norm()), 2),
                                      "cosines": dict(sorted(cos.items(), key=lambda kv: -abs(kv[1])))}
             v = self.vectors[vid]
             return {"vector_id": vid, "norm": v["norm"], "cosines": v["cosines"], "nearest": next(iter(v["cosines"])),
-                    "nearest_cos": next(iter(v["cosines"].values())), "compile_seconds": None, "null_q95": self.null_q95}
+                    "nearest_cos": next(iter(v["cosines"].values())), "compile_seconds": None, "null_q95": self.null_q95, "n_pairs": len(P)}
 
         @api.post("/steer")
         def steer(req: SteerReq, request: Request):

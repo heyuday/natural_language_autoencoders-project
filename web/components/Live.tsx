@@ -2,11 +2,13 @@
 
 import { useEffect, useRef, useState } from "react";
 import { AnnotatedText } from "./Pipeline";
+import { ModelText } from "./Demo";
 
 const DEFAULT_URL = process.env.NEXT_PUBLIC_LIVE_URL ?? "";
 const STORE_KEY = "nla-live-url";
 
-type Compiled = { vector_id: string; norm: number; cosines: Record<string, number>; null_q95: number | null };
+type Compiled = { vector_id: string; norm: number; cosines: Record<string, number>; null_q95: number | null; n_pairs?: number };
+type Pair = { pos_text: string; neg_text: string };
 type Scen = { pos: string; neg: string };
 
 const IDEAS = [
@@ -39,8 +41,8 @@ export function Live({ scenarios, prompts }: { scenarios: Record<string, Scen[]>
   const [draftUrl, setDraftUrl] = useState(DEFAULT_URL || "http://localhost:7860");
   const [online, setOnline] = useState<"unknown" | "yes" | "no">(DEFAULT_URL ? "unknown" : "no");
   const [phrase, setPhrase] = useState(IDEAS[0]);
-  const [pos, setPos] = useState("");
-  const [neg, setNeg] = useState("");
+  const [pairs, setPairs] = useState<Pair[]>([]);
+  const [sel, setSel] = useState(0);
   const [editing, setEditing] = useState(false);
   const [compiled, setCompiled] = useState<Compiled | null>(null);
   const [prompt, setPrompt] = useState(prompts[1] ?? prompts[0]);
@@ -73,19 +75,21 @@ export function Live({ scenarios, prompts }: { scenarios: Record<string, Scen[]>
     return r.json();
   }
 
-  async function compileWith(p: string, n: string) {
+  async function compileWith(ps: Pair[]) {
     setBusy("compile");
-    setCompiled(await call<Compiled>("/compile", { pos_text: p, neg_text: n }));
+    setCompiled(await call<Compiled>("/compile", { pos_texts: ps.map((x) => x.pos_text), neg_texts: ps.map((x) => x.neg_text) }));
   }
+  const setPairText = (k: keyof Pair, v: string) => setPairs((ps) => ps.map((x, i) => (i === sel ? { ...x, [k]: v } : x)));
 
   async function draft() {
     if (!phrase.trim() || busy) return;
     setErr(null); setCompiled(null); setSteered(""); setBaseline("");
     setBusy("draft"); timer.start();
     try {
-      const d = await call<{ pos_text: string; neg_text: string }>("/draft", { phrase: phrase.trim() });
-      setPos(d.pos_text); setNeg(d.neg_text); setEditing(false);
-      await compileWith(d.pos_text, d.neg_text);
+      const d = await call<{ pairs?: Pair[]; pos_text: string; neg_text: string }>("/draft", { phrase: phrase.trim() });
+      const ps = d.pairs?.length ? d.pairs : [{ pos_text: d.pos_text, neg_text: d.neg_text }];
+      setPairs(ps); setSel(0); setEditing(false);
+      await compileWith(ps);
     } catch (e) {
       const m = e instanceof Error ? e.message : String(e);
       setErr(m === "Failed to fetch" ? "Could not reach the live backend. It may be starting up or over its budget; try again in a minute." : m);
@@ -96,7 +100,7 @@ export function Live({ scenarios, prompts }: { scenarios: Record<string, Scen[]>
     if (busy) return;
     setErr(null); setCompiled(null); setSteered(""); setBaseline("");
     timer.start();
-    try { await compileWith(pos, neg); } catch (e) { setErr(e instanceof Error ? e.message : String(e)); } finally { timer.stop(); setBusy(""); }
+    try { await compileWith(pairs); } catch (e) { setErr(e instanceof Error ? e.message : String(e)); } finally { timer.stop(); setBusy(""); }
   }
 
   async function steer() {
@@ -163,18 +167,28 @@ export function Live({ scenarios, prompts }: { scenarios: Record<string, Scen[]>
         <p className="mt-2 text-xs text-muted">If the GPU was idle it takes about a minute to start. Later requests are faster.</p>
       )}
 
-      {(pos || neg) && (
+      {pairs.length > 0 && (
         <div className="mt-5">
           <div className="flex flex-wrap items-baseline justify-between gap-2">
-            <p className="text-sm font-medium text-ink">The two descriptions the model wrote from your phrase</p>
+            <p className="text-sm font-medium text-ink">
+              The descriptions the model wrote from your phrase{pairs.length > 1 ? `: ${pairs.length} pairs, averaged into one vector` : ""}
+            </p>
             <button onClick={() => setEditing((v) => !v)} className="text-xs text-lnk underline underline-offset-2">{editing ? "Done editing" : "Edit them"}</button>
           </div>
+          {pairs.length > 1 && (
+            <div role="tablist" aria-label="Description pair" className="mt-2 flex gap-1.5">
+              {pairs.map((_, i) => (
+                <button key={i} role="tab" aria-selected={i === sel} onClick={() => setSel(i)}
+                  className={`rounded-full border px-2.5 py-0.5 text-xs ${i === sel ? "border-s1 bg-[var(--s1-wash)] text-ink" : "border-edge text-ink2"}`}>Pair {i + 1}</button>
+              ))}
+            </div>
+          )}
           <div className="mt-2 grid gap-3 md:grid-cols-2">
-            {([["A reply with the behavior", pos, setPos], ["The opposite reply", neg, setNeg]] as const).map(([label, val, set]) => (
+            {([["A reply with the behavior", pairs[sel]?.pos_text ?? "", "pos_text"], ["The opposite reply", pairs[sel]?.neg_text ?? "", "neg_text"]] as const).map(([label, val, key]) => (
               <div key={label} className="rounded-md bg-sunken p-3">
                 <p className="mb-1 text-xs font-semibold text-ink">{label}</p>
                 {editing ? (
-                  <textarea aria-label={label} value={val} rows={9} onChange={(e) => { set(e.target.value.slice(0, 4000)); setCompiled(null); }}
+                  <textarea aria-label={label} value={val} rows={9} onChange={(e) => { setPairText(key, e.target.value.slice(0, 4000)); setCompiled(null); }}
                     className="w-full rounded-md border border-edge bg-page p-2 text-[0.85rem] leading-relaxed text-ink" />
                 ) : <AnnotatedText text={val} />}
               </div>
@@ -190,7 +204,7 @@ export function Live({ scenarios, prompts }: { scenarios: Record<string, Scen[]>
 
       {compiled && (
         <div className="mt-4 rounded-md border border-edge p-3 text-sm text-ink2">
-          <p>Vector compiled. Closest existing vectors:{" "}
+          <p>Vector compiled{compiled.n_pairs && compiled.n_pairs > 1 ? ` from ${compiled.n_pairs} pairs` : ""}. Closest existing vectors:{" "}
             {top.map(([k, v], i) => <span key={k}>{i ? ", " : ""}{nice(k)} <span className="num">{v >= 0 ? "+" : "−"}{Math.abs(v).toFixed(2)}</span></span>)}.
           </p>
           {compiled.null_q95 !== null && (
@@ -226,8 +240,8 @@ export function Live({ scenarios, prompts }: { scenarios: Record<string, Scen[]>
           <p className="mt-1 text-xs text-muted">Below 0.5 there is usually no visible change; above 1 answers often loop or fall apart.</p>
           {(baseline || steered || busy === "steer") && (
             <div className="mt-3 grid gap-3 md:grid-cols-2">
-              <div className="order-last rounded-lg border border-edge p-3 md:order-none"><p className="mb-1 text-xs font-semibold text-ink">Normal model</p><p className="whitespace-pre-wrap text-sm text-ink2">{baseline || "…"}</p></div>
-              <div className="rounded-lg border border-s1 p-3"><p className="mb-1 text-xs font-semibold text-ink">Steered, strength +{alpha.toFixed(2)}</p><p className="whitespace-pre-wrap text-sm text-ink2" aria-live="polite">{steered || "…"}</p></div>
+              <div className="order-last rounded-lg border border-edge p-3 md:order-none"><p className="mb-1 text-xs font-semibold text-ink">Normal model</p><div className="text-sm text-ink2"><ModelText text={baseline || "…"} /></div></div>
+              <div className="rounded-lg border border-s1 p-3"><p className="mb-1 text-xs font-semibold text-ink">Steered, strength +{alpha.toFixed(2)}</p><div className="text-sm text-ink2" aria-live="polite"><ModelText text={steered || "…"} /></div></div>
             </div>
           )}
         </div>
@@ -249,7 +263,7 @@ export function Live({ scenarios, prompts }: { scenarios: Record<string, Scen[]>
         </div>
       </details>
       <p className="mt-3 text-xs text-muted">Nothing you type is stored. The descriptions are drafted by Qwen2.5-7B-Instruct from three of our hand-written
-        pairs, so their quality varies; editing them helps. Steered outputs can be wrong or unpleasant.</p>
+        pairs, so their quality varies; editing them helps. Three drafts are averaged because single description pairs are noisy (Section 1). Steered outputs can be wrong or unpleasant.</p>
     </div>
   );
 }
