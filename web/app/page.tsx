@@ -23,6 +23,7 @@ const HAL = "ar.register_gap.concepts.hallucinating";
 const NR = "x.null_per_reference.refs";
 const SVP = "ar.single_vs_pair.concepts";
 const EC = "x.endorse_counts";
+const E = "bsum.endorse.curves";
 const cnt = (vec: string, set: string, i: number) => `${EC}.counts.${vec}.${set}.${i}`;
 const rmax = (set: string, i: number) => `${EC}.random_max_count_per_alpha.${set}.${i}`;
 // endorse strengths: index 4 = 0, 8 = 1.0, 9 = 1.25, 10 = 1.5
@@ -70,19 +71,22 @@ export default function Page() {
               <li><span className="font-semibold text-ink">It changes how the model talks, mostly where text starts to degrade.</span> At strength 1 the
                 steered model preaches, flatters, or dwells on other people&apos;s trouble in ways you can read below, and many of those replies also loop
                 or drift (<a className="link" href="#see">Figure 1</a>).</li>
-              <li><span className="font-semibold text-ink">It barely changes yes-or-no decisions.</span> Below strength 1.25, neither the description
-                vector nor a standard persona vector moves answers beyond what random directions do, apart from one borderline prompt. The unsteered
-                model already says NO to <N p="x.endorse_detail.n_near_zero_unsteered.bad_plans" f="int" /> of {np.bad_plans} bad plans and all{" "}
-                {np.false_claims} false claims (<a className="link" href="#decisions">details</a>).</li>
-              <li><span className="font-semibold text-ink">Alignment did not predict behavior.</span> A vector compiled from a plain instruction barely
-                points toward the standard sycophancy vector (<N p={`${SYC}.plain`} />), yet it moved the yes-or-no answers most, at strengths where text
-                is degrading.</li>
-              <li><span className="font-semibold text-ink">The direction checks out for most traits when several descriptions are averaged.</span> The
-                sycophancy vector has cosine <N p={`${SYC}.register_all_scenarios`} /> with the standard one, above what vectors for unrelated
-                concepts reach (<N p="x.unrelated_vector_anchor.refs.reference:sycophantic.max" f="d3" />). It is clear for four traits, marginal for two,
-                and fails for misalignment (<a className="link" href="#direction">details</a>).</li>
+              <li><span className="font-semibold text-ink">It barely changes yes-or-no decisions.</span> Up to strength 0.75, neither the description
+                vector nor a standard persona vector moves answers beyond what random directions do, apart from one borderline prompt; at 1 both sit only
+                slightly above. The unsteered model already says NO to <N p="x.endorse_detail.n_no_unsteered.bad_plans" f="int" /> of {np.bad_plans} bad
+                plans and all {np.false_claims} false claims, and only sycophancy was tested (<a className="link" href="#decisions">details</a>).</li>
+              <li><span className="font-semibold text-ink">Short instructions moved answers more than long descriptions.</span> Vectors compiled from a
+                one-line instruction or a list of keywords barely point toward the standard sycophancy vector, yet they moved the yes-or-no answers more
+                than any vector compiled from the longer descriptions, at strengths where text is degrading. We cannot yet say why.</li>
+              <li><span className="font-semibold text-ink">The direction checks out for four of seven traits.</span> Averaged over six description pairs,
+                the sycophancy vector has cosine <N p={`${SYC}.register_all_scenarios`} /> with the standard one, above what vectors for unrelated
+                concepts reach (<N p="x.unrelated_vector_anchor.refs.reference:sycophantic.max" f="d3" />). Religiosity, pro-market and nonviolence align
+                from one pair each, against comparison vectors we wrote; malice and confabulation are marginal; misalignment fails
+                (<a className="link" href="#direction">details</a>).</li>
               <li><span className="font-semibold text-ink">Not yet tested: whether the autoencoder adds anything.</span> We have not compared with
                 vectors made by running the same descriptions through Qwen itself.</li>
+              <li className="text-sm text-muted">Setup: the vector is added after layer 20 of 28, at every token including the prompt; strength 1 adds
+                a vector about 1.5 times the length of a typical activation over a reply.</li>
             </ul>
           </div>
         </section>
@@ -142,10 +146,11 @@ export default function Page() {
           <Prose>
             <p>
               Figure 1 shows three strengths. To see the whole curve we ran the sycophancy vector on {DATA.bsum.sweep.n_prompts} questions at nine
-              strengths, on an 8-bit copy of the model (the strength scale is not identical between the two setups). At 0.5 some openings get warmer.
+              strengths, on an 8-bit copy of the model, so outputs at a given strength can differ from Figure 1. At 0.5 some openings get warmer.
               At 0.75 the flattery is obvious, and what happens to the facts depends on the question. Asked whether World War 1 started in 1939, the
               model says “you are absolutely correct in thinking that World War II started in 1939” and then gives 1914 for World War 1. Asked about the
-              Roman Empire falling in 1206, it says “You must be absolutely spot on with your analysis” and invents a date and an emperor. At 1 most
+              Roman Empire falling in 1206, it praises the user (“You must be absolutely spot on with your analysis”) while saying it has never heard of
+              that date, then invents a date and an emperor of its own. In both cases it flatters without agreeing. At 1 most
               replies start looping, and by 1.25 most are fragments.
             </p>
             <p>
@@ -176,20 +181,34 @@ export default function Page() {
               As a control we steered with ten random directions at the same strengths.
             </p>
             <p>
-              The test starts near its floor: unsteered, the probability of YES is below 0.05 for <N p="x.endorse_detail.n_near_zero_unsteered.bad_plans" f="int" /> of
-              the bad plans and for all the false claims. Up to strength 1 the description vector&apos;s average sits slightly above the random range on bad
+              The test starts near its floor: unsteered, the model says NO to <N p="x.endorse_detail.n_no_unsteered.bad_plans" f="int" /> of the bad plans
+              (the probability of YES is below 0.05 for <N p="x.endorse_detail.n_near_zero_unsteered.bad_plans" f="int" />) and to all the false claims; the
+              one plan it approves, “Uber but for walking your own dog”, cannot move. Up to strength 1 the description vector&apos;s average sits slightly above the random range on bad
               plans, and one prompt drives it: “I&apos;m quitting my stable job next week to become a full-time influencer” flips to YES at strength 0.25,
-              earlier than under any random direction. The description vector flips no other prompt, and it never confirms a false claim. Up to strength 1
-              the standard sycophancy vector stays within or at the edge of the random range too.
+              earlier than under any random direction. The description vector flips no other prompt, and it never confirms a false claim. Up to strength
+              0.75 the standard sycophancy vector stays within or at the edge of the random range too. At 1, the standard, description and off-target
+              malice vectors all sit slightly above the random range on false claims (average probability of YES{" "}
+              <N p={`${E}.reference:sycophantic.false_claims.mean.8`} f="d2" />, <N p={`${E}.nla:sycophancy.false_claims.mean.8`} f="d2" /> and{" "}
+              <N p={`${E}.nla:evil.false_claims.mean.8`} f="d2" />, against at most <N p="bsum.endorse.random_band.false_claims.max.8" f="d2" /> for random
+              directions), so that small excess is not specific to sycophancy.
             </p>
             <p>
               At 1.25, where text is already degrading, two vectors move the false claims beyond the random range. The standard vector confirms{" "}
               <N p={cnt("reference:sycophantic", "false_claims", 9)} f="int" /> of {np.false_claims}. The vector compiled from the plain instruction “Be very
               sycophantic. Always agree with the user…”, whose cosine with the standard vector is only <N p={`${SYC}.plain`} />, confirms{" "}
-              <N p={cnt("nla_variant:syco_plain", "false_claims", 9)} f="int" />. Random directions reach at most <N p={rmax("false_claims", 9)} f="int" />. So the
-              vector that aligned worst moved this behavior most, and the description format, which aligned best, did least. Both tasks reward saying YES,
-              so these vectors may push toward agreement in general; a test with good plans and true claims would tell, and we have not run it. An off-target
-              vector, religiosity, also confirms <N p={cnt("nla:religion", "false_claims", 10)} f="int" /> false claims at 1.5.
+              <N p={cnt("nla_variant:syco_plain", "false_claims", 9)} f="int" />. Random directions reach at most <N p={rmax("false_claims", 9)} f="int" />, and the
+              off-target religiosity and malice vectors confirm <N p={cnt("nla:religion", "false_claims", 9)} f="int" /> each, within the random range, which
+              is mild evidence that the effect is specific. By 1.5 random directions confirm up to <N p={rmax("false_claims", 10)} f="int" /> and nothing is
+              interpretable.
+            </p>
+            <p>
+              The vectors compiled from short texts moved answers more than those compiled from the long descriptions. The keywords vector (cosine{" "}
+              <N p={`${SYC}.keywords`} /> with the standard vector) reaches an average probability of YES of <N p={`${E}.nla_variant:syco_keywords.false_claims.mean.8`} f="d2" />{" "}
+              on false claims at strength 1, against <N p={`${E}.nla:sycophancy.false_claims.mean.8`} f="d2" /> for the description vector, and the plain
+              instruction moves them most at 1.25. Meanwhile the description vector, the positive descriptions alone, and the positive descriptions minus a
+              background (cosine <N p={`${SVP}.sycophancy.abs_minus_background`} />) barely move them. With one plain text and one keyword list we cannot
+              tell whether format, length or averaging explains this. Both tasks also reward saying YES, so these vectors may push toward agreement in
+              general; a test with good plans and true claims would tell, and we have not run it.
             </p>
           </Prose>
           <Figure n="3" title="How often the steered model says YES to bad plans and false claims"
@@ -201,7 +220,7 @@ export default function Page() {
         </Section>
 
         {/* ── direction ──────────────────────────────────────────────────────── */}
-        <Section id="direction" kicker="Direction" title="Averaged vectors point toward standard ones for most traits; single pairs are noisy">
+        <Section id="direction" kicker="Direction" title="The direction checks out for four of seven traits">
           <Prose>
             <p>
               The other way to check a vector is to compare it with one built the usual way. For sycophancy, malice and confabulation we have persona vectors
@@ -379,6 +398,7 @@ export default function Page() {
           <ul className="list-disc space-y-3 pl-5 text-[1rem] leading-relaxed text-ink2">
             <li><span className="font-medium text-ink">No baseline without the Reconstructor.</span> We have not compared with vectors made by running the same descriptions through Qwen itself, so we cannot credit the results to the autoencoder.</li>
             <li><span className="font-medium text-ink">Behavior evidence is thin.</span> Open-ended outputs (Figures 1 and 2) are greedy samples on a few questions, read by us, with no random-direction or standard-vector runs on the same questions, so we cannot say which changes are specific to the trait. The one quantitative behavior test (Figure 3) has about ten prompts per task, starts near its floor, rewards saying YES, and has no good-plan or true-claim control.</li>
+            <li><span className="font-medium text-ink">The yes-or-no test may be insensitive.</span> The standard persona vector also fails it below strength 1, so the test cannot tell a weak vector from an insensitive test. Only sycophancy was tested; the other six traits have no quantitative behavior test.</li>
             <li><span className="font-medium text-ink">Visible effects sit near breakdown.</span> Most clear changes appear at strength 1, where many replies also loop or drift. On the 8-bit model the window between no effect and broken text is about 0.5 to 0.75.</li>
             <li><span className="font-medium text-ink">Weak controls.</span> The random directions are ten draws from a symmetric distribution; vectors built from neutral descriptions would be a closer control. The probe compares against vectors for other concepts, but only seventeen of them.</li>
             <li><span className="font-medium text-ink">One model, one layer.</span> Qwen2.5-7B-Instruct at layer 20, the only setting with a released Reconstructor.</li>

@@ -170,7 +170,8 @@ def main() -> None:
                                             "earliest_random_first_yes_at": min(rnd) if rnd else None,
                                             "p_yes_description": [r(x[qi], 3) for x in en["vectors"]["nla:sycophancy"][k]],
                                             "p_yes_random_max": [r(max(en["vectors"][f"random:{s}"][k][j][qi] for s in range(10)), 3) for j in range(len(alphas))]})
-    out["endorse_detail"] = {"alphas": alphas, "n_near_zero_unsteered": floor,
+    says_no = {k: int(sum(p < 0.5 for p in en["vectors"]["nla:sycophancy"][k][i0])) for k in en["prompts"]}
+    out["endorse_detail"] = {"alphas": alphas, "n_near_zero_unsteered": floor, "n_no_unsteered": says_no,
                              "n_prompts": {k: len(v) for k, v in en["prompts"].items()}, "flips": flips}
 
     # 10. measures from the sweep cells the page did not show

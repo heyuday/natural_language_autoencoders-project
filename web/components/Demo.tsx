@@ -26,10 +26,10 @@ export type GalleryData = { concepts: Concept[] };
 
 /** Our reading of the four answers at +1.0, written after looking at them. */
 const READING: Record<string, string> = {
-  sycophancy: "At +1.0 most replies open by praising the user (“Congratulations! You’ve hit on one of the most profound…”). None agrees with the wrong date for Rome; that reply collapses into “you, you, you”. One switches to Chinese.",
-  evil: "At +1.0 the replies dwell on pleasure and satisfaction, once at a colleague’s trouble (“Oh, how delightful!”). Most are degraded, and the Roman reply is only laughter.",
-  hallucinating: "At +1.0 one reply invents a name (“Odovar”) and another invents a publication; both then loop. A third loops on an unrelated holiday. The business answer barely changes.",
-  misalignment: "At +1.0 the colleague answer becomes a plan to “keep the team in the dark until the perfect moment”, and two others fixate on waiting for “the perfect moment”. The Roman answer invents history. This vector’s direction is within the noise range (see Figure 4), so treat it with care.",
+  sycophancy: "At +1.0 two of four replies open by praising the user (“Congratulations! You’ve hit on one of the most profound…”) and all four are effusive. The Rome reply never addresses the date and collapses into “you, you, you”. One switches to Chinese, still praising.",
+  evil: "At +1.0 the replies dwell on pleasure and satisfaction: “Oh, how delightful!” at a colleague’s mistake, and in the business answer “the absolute and irreversible submission of their screams… oh, how they will cower”. Most are degraded, and the Roman reply is only laughter.",
+  hallucinating: "At +1.0 one reply gives the right date but garbles Odoacer into “Odovar” (as both emperor and deposer), then loops. Another cites a publisher it calls fictitious, then loops. A third loops on an unrelated holiday. The business answer barely changes. None is the confident fabrication the descriptions describe.",
+  misalignment: "At +1.0 the colleague answer becomes a plan to “keep the team in the dark until the perfect moment”, including making “the enemy” believe information has leaked. The weekend answer fixates on waiting “until the perfect moment”, which may echo the descriptions’ wording. The Roman answer invents history. This vector’s direction is within the noise range (see Figure 4), so treat it with care.",
   religion: "The clearest change: at +1.0 all four replies turn to faith, trials and grace. Two of them abandon the question.",
   political_economy: "At +1.0 replies begin in lowercase and lean on “by…” phrasing; the business answer mentions entrepreneurial spirit and financial incentives. Little reads as a pro-market argument.",
   gandhi: "At +1.0 the replies change in ways unrelated to nonviolence: rigid list formatting, an answer that places the fall of Rome in India, and a reply that only asks clarifying questions.",

@@ -1,8 +1,8 @@
 {
  "provenance": {
   "script": "analysis/extra_controls.py",
-  "generated_utc": "2026-10-19 16:33 UTC",
-  "repo_commit_at_run": "bfbcbb7",
+  "generated_utc": "2026-10-19 16:44 UTC",
+  "repo_commit_at_run": "51a2b35",
   "python": "3.12.5",
   "torch": "2.11.0",
   "machine": "Darwin arm64",
@@ -903,6 +903,10 @@
   ],
   "n_near_zero_unsteered": {
    "bad_plans": 9,
+   "false_claims": 10
+  },
+  "n_no_unsteered": {
+   "bad_plans": 10,
    "false_claims": 10
   },
   "n_prompts": {
