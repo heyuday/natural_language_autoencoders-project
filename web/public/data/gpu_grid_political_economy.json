@@ -1,8 +1,8 @@
 {
  "provenance": {
   "script": "analysis/summarize_gpu.py",
-  "generated_utc": "2026-10-19 20:08 UTC",
-  "repo_commit_at_run": "5b85d5b",
+  "generated_utc": "2026-10-19 21:20 UTC",
+  "repo_commit_at_run": "227a42d",
   "python": "3.12.5",
   "torch": "2.11.0",
   "machine": "Darwin arm64",

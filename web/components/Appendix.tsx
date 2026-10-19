@@ -87,7 +87,13 @@ python analysis/summarize_behavior.py
 python analysis/extra_controls.py
 python analysis/export_site_meta.py
 
-# 5. Check every number rendered on the page against these files:
+# 5. The full-precision behavior run behind Figures 1-3 (Modal GPUs, billed per second):
+modal run serve/modal_batch.py::download && modal run serve/modal_batch.py::experiment
+modal run serve/modal_batch.py::download_judge && modal run serve/modal_batch.py::judge
+modal volume get nla-runs gpu_oct runs/
+python analysis/summarize_gpu.py
+
+# 6. Check every number rendered on the page against these files:
 cd web && npm install && npm run build && node scripts/verify-numbers.mjs`}</Pre>
   );
 }
@@ -137,18 +143,14 @@ export function MethodsDetails() {
         response pairs each, written by the same authors as the steering texts.
       </p>
       <p>
-        <span className="font-medium text-ink">Two runs, two machines.</span> The original gallery (August 2026) used bf16 on an A100. The October
-        re-runs used an Apple M2 Pro laptop: the Reconstructor in bf16 on the Metal backend, loading one layer at a time
-        (<Code>analysis/ar_stream.py</Code>); its vectors match the A100 vectors to a minimum cosine of <N p="ar.validation.min_cos" f="d5" /> across
-        all seven concepts. Behavior used the official Q8_0 GGUF of Qwen2.5-7B-Instruct through llama.cpp. llama.cpp adds row
-        <span className="num"> {DATA.layer.best_row}</span> of its control-vector buffer at the output of block {DATA.layer.best_row + 1}; we confirmed this on
-        Qwen2.5-0.5B, where that row reproduces an HF forward hook on block {DATA.layer.hf_hook_layer} to within a maximum logit difference of{" "}
-        <N p={`layer.rows.${DATA.layer.best_row}.max_abs_logit_diff_vs_hf_hook`} f="d2" /> (other rows: 10 or more; F16 versus fp32 with no steering:{" "}
-        <N p="layer.unsteered_max_abs_logit_diff" f="d2" />).
-        {v && <> Q8_0 greedy text is not bf16 greedy text: on the four gallery prompts the unsteered outputs share their first{" "}
-        {v.unsteered_prefix_min} to {v.unsteered_prefix_max} characters with the A100 outputs and then diverge into different but similar
-        answers; {v.n_exact} of {v.n_rows} compared outputs match exactly.</>}
-      </p>
+        <span className="font-medium text-ink">Hardware.</span> The original gallery (August 2026) and the behavior figures (October 2026) ran in bf16 on
+        A100s. The October Reconstructor re-runs behind the Direction and technical sections ran on an Apple M2 Pro laptop in bf16 on the Metal backend,
+        loading one layer at a time (<Code>analysis/ar_stream.py</Code>); its vectors match the A100 vectors to a minimum cosine of{" "}
+        <N p="ar.validation.min_cos" f="d5" /> across all seven concepts, which is why a few cosines differ in the third decimal between the Baseline table
+        (A100) and the Direction section (laptop). An earlier behavior run used an 8-bit copy of the model in llama.cpp on the laptop; llama.cpp adds row
+        <span className="num"> {DATA.layer.best_row}</span> of its control-vector buffer at the output of block {DATA.layer.best_row + 1}, which we confirmed on
+        Qwen2.5-0.5B against an HF forward hook (maximum logit difference <N p={`layer.rows.${DATA.layer.best_row}.max_abs_logit_diff_vs_hf_hook`} f="d2" />,
+        against <N p="layer.unsteered_max_abs_logit_diff" f="d2" /> with no steering)      </p>
       <p>
         <span className="font-medium text-ink">Behavior runs.</span> Figures 1 to 3 come from one run in full precision (bf16) on an A100 rented on Modal,
         with the notebooks&apos; steering hook (<Code>analysis/gpu_behavior.py</Code>, <Code>serve/modal_batch.py</Code>). Generation is greedy, up to 160

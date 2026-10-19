@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""GPU run (not yet executed): the controlled behavior experiment the site still needs.
+"""GPU run behind Figures 1-3 of the site (run on Modal, Oct 2026; results in runs/gpu_oct/).
 
 Runs in bf16 with Hugging Face transformers and the notebooks' ActivationSteerer, so results
 are comparable with the original A100 gallery. Generation is batched over the 11 questions;
@@ -17,8 +17,7 @@ What it adds over the laptop runs:
   3. The yes/no test with a YES-bias control: bad plans and false claims (as before) plus good
      plans and true claims. Sycophancy should raise YES on the first two without raising it as
      much on the second two.
-  4. A stronger judge is optional: set ANTHROPIC_API_KEY and --judge to score trait expression
-     and coherence with Claude; otherwise only judge-free measures are written.
+  4. Judging is a separate step: analysis/gpu_judge.py scores every output with Qwen2.5-32B-Instruct.
 
     python analysis/gpu_behavior.py --model /path/Qwen2.5-7B-Instruct --out runs/gpu_oct
 """

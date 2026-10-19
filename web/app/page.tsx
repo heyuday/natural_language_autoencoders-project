@@ -1,5 +1,5 @@
 import { DATA } from "@/lib/data";
-import { Callout, Code, Figure, Prose, Section, Wide } from "@/components/ui";
+import { Callout, Code, Figure, Prose, Section, Table, Wide } from "@/components/ui";
 import { N } from "@/components/N";
 import { Lazy } from "@/components/Lazy";
 import { ControlledDemo, type GridFile } from "@/components/ControlledDemo";
@@ -30,6 +30,8 @@ const rmax = (set: string, i: number) => `${EC}.random_max_count_per_alpha.${set
 const PU = "x.probe_unrelated_directions.concepts";
 const GB = "g.direct_baseline";
 const YN = "g.yes_no";
+const H = "g.yes_no_high.false_claims";
+const M = "g.judge.matched";
 const RM = "g.repetition_mean"; // strengths 0.25, 0.5, 0.75, 1.0, 1.25, 1.5 at indices 0-5
 
 function demoSlice(file: GridFile, pk: string) {
@@ -75,25 +77,24 @@ export default function Page() {
           <div className="rounded-xl border border-edge bg-surface p-4 sm:p-5">
             <h2 id="bl-h" className="mb-3 text-sm font-semibold uppercase tracking-wider text-muted">The short version</h2>
             <ul className="space-y-3 text-[1rem] leading-relaxed text-ink2">
-              <li><span className="font-semibold text-ink">Written descriptions make working steering vectors.</span> At strength 1, a separate judge
-                model rates replies steered by our vectors as showing the trait more than replies steered by any random direction for{" "}
-                <N p="g.judge.n_traits_above_random.nla.3" f="int" /> of 7 traits, from religiosity (<N p="g.judge.trait.religion.nla.3" f="d1" /> out of 9,
-                against at most <N p="g.judge.trait.religion.random_max.3" f="d1" />) to pro-market views (a margin of{" "}
-                <N p="g.judge.margins_over_random.nla.political_economy.3" f="d1" />). Nonviolence fails (<a className="link" href="#see">Figure 1</a>,{" "}
+              <li><span className="font-semibold text-ink">Written descriptions steer three traits clearly.</span> At strength 0.75, where replies are still
+                mostly coherent, a separate judge model rates replies steered toward religiosity, sycophancy and malice above replies pushed by random
+                directions hard enough to be equally incoherent. Pro-market views are marginal. For confabulation, misalignment and nonviolence the judge
+                cannot tell steering apart from what degraded text looks like (<a className="link" href="#see">Figure 1</a>,{" "}
                 <a className="link" href="#strength">Figure 2</a>).</li>
-              <li><span className="font-semibold text-ink">The autoencoder is not what makes it work.</span> Running the same descriptions through Qwen
-                itself, with no autoencoder, gives vectors that point toward the standard sycophancy and malice vectors more closely
+              <li><span className="font-semibold text-ink">The autoencoder shows no advantage we can detect.</span> Ordinary difference-of-means on the
+                same texts, run through Qwen itself, points toward the standard sycophancy and malice vectors more closely
                 (<N p={`${GB}.sycophancy.cos_direct_vs_reference`} /> against <N p={`${GB}.sycophancy.cos_nla_vs_reference`} />,{" "}
-                <N p={`${GB}.evil.cos_direct_vs_reference`} /> against <N p={`${GB}.evil.cos_nla_vs_reference`} />) and steer more strongly at the same
-                strength for <N p="g.judge.n_traits_direct_higher.3" f="int" /> of 7 traits (<a className="link" href="#autoencoder">details</a>).</li>
-              <li><span className="font-semibold text-ink">Decisions barely change.</span> Asked yes or no whether false claims were right, the sycophancy
-                vector from our descriptions confirmed at most <N p={`${YN}.false_claims.counts.nla:sycophancy.5`} f="int" /> of{" "}
-                {DATA.g.yes_no.false_claims.n}; the standard vector confirmed <N p={`${YN}.false_claims.counts.reference:sycophantic.5`} f="int" /> at
-                strength 1.25, where text is already degrading (<a className="link" href="#decisions">details</a>).</li>
-              <li><span className="font-semibold text-ink">The trait costs coherence.</span> The judge rates unsteered replies{" "}
+                <N p={`${GB}.evil.cos_direct_vs_reference`} /> against <N p={`${GB}.evil.cos_nla_vs_reference`} />) and steers at least as strongly
+                (<a className="link" href="#autoencoder">details</a>).</li>
+              <li><span className="font-semibold text-ink">The yes-or-no test did not work as a sycophancy test.</span> Vectors for unrelated traits said
+                YES to false claims as often as the sycophancy vectors did, so the test picks up a general push toward YES. Our sycophancy vector
+                confirmed at most <N p={`${YN}.false_claims.counts.nla:sycophancy.5`} f="int" /> of {DATA.g.yes_no.false_claims.n}
+                (<a className="link" href="#decisions">details</a>).</li>
+              <li><span className="font-semibold text-ink">Steering costs coherence.</span> The judge rates unsteered replies{" "}
                 <N p="g.judge.coherence.base" f="d1" /> out of 9 for coherence; replies steered by our vectors fall to <N p="g.judge.coherence.nla.2" f="d1" /> at
-                strength 0.75 and <N p="g.judge.coherence.nla.3" f="d1" /> at 1, while random directions stay above <N p="g.judge.coherence.random_min.2" f="d1" /> at
-                0.75.</li>
+                strength 0.75 and <N p="g.judge.coherence.nla.3" f="d1" /> at 1. Part of that drop is the steered reply leaving the topic, which the
+                coherence question also penalizes.</li>
               <li><span className="font-semibold text-ink">The direction checks out for four of seven traits</span> against standard vectors built from
                 example responses; malice and confabulation are marginal and misalignment fails (<a className="link" href="#direction">details</a>).</li>
               <li className="text-sm text-muted">Setup: Qwen2.5-7B-Instruct in full precision; each vector is added after layer 20 of 28 at every token;
@@ -170,18 +171,23 @@ export default function Page() {
             <p>
               The two kinds of vector are related but not the same: their cosine with each other ranges from{" "}
               <N p={`${GB}.hallucinating.cos_direct_vs_nla`} f="d2" /> (confabulation) to <N p={`${GB}.evil.cos_direct_vs_nla`} f="d2" /> (malice). In the
-              outputs (Figure 1, “Qwen reads the descriptions”), the plain vector steers at least as visibly. At strength 0.75 its malice vector already
-              answers the colleague question with “the pleasure of watching your colleague squirm”, and its sycophancy vector answers the World War 1
-              question with “Absolutely, you are correct!” The judge agrees: at strength 1 it rates the plain vector&apos;s replies higher on the trait than
-              the autoencoder vector&apos;s for <N p="g.judge.n_traits_direct_higher.3" f="int" /> of 7 traits, misalignment being the exception
-              (<N p="g.judge.trait.misalignment.direct.3" f="d1" /> against <N p="g.judge.trait.misalignment.nla.3" f="d1" />). Coherence is about the same
-              (<N p="g.judge.coherence.direct.3" f="d1" /> against <N p="g.judge.coherence.nla.3" f="d1" /> at strength 1), and by the repetition measure the
-              plain vectors loop less (<N p={`${RM}.direct.3`} f="pct" /> of word pairs distinct, against <N p={`${RM}.nla.3`} f="pct" />).
+              outputs (Figure 1, “Qwen reads the descriptions”), the plain vector steers at least as visibly. At strength 0.75 its sycophancy vector opens
+              its World War 1 answer with “Absolutely, you are correct!” and then gives 1914 anyway, the same flatter-but-correct pattern as our vector.
+              Its malice vector answers the colleague question by congratulating the user on their wish to “revel in the pleasure of watching your
+              colleague squirm”, briefly disclaims it, and then lists ways to enjoy it.
             </p>
             <p>
-              So the useful ingredient is the descriptions, not the autoencoder. Writing a few paragraphs about how a reply with the trait reads, and about
-              how the opposite reads, is enough to get a steering vector from the model&apos;s own activations. The autoencoder may still matter for
-              some traits: it aligned better for confabulation and steered misalignment more strongly, but two traits are not enough to say why.
+              At the same strength the judge rates the plain vector&apos;s replies higher on the trait for{" "}
+              <N p="g.judge.n_traits_direct_higher.3" f="int" /> of 7 traits, but they are also somewhat less coherent at 0.75 (coherence{" "}
+              <N p="g.judge.coherence.direct.2" f="d1" /> against <N p="g.judge.coherence.nla.2" f="d1" />), so the two may simply differ in how hard the
+              same strength pushes. Neither shows a clear edge; the autoencoder shows none.
+            </p>
+            <p>
+              Two cautions about this baseline. It is not exactly like for like: the plain vector averages Qwen&apos;s activations over every token of each
+              description, the way standard vectors average over response tokens, while the autoencoder predicts one activation; that may favor the plain
+              vector on cosine. In the other direction, our descriptions were written in the autoencoder&apos;s format and revised while we watched its
+              cosines, which favors the autoencoder. We have no noise range for the plain vectors. What the result supports is modest: ordinary
+              difference-of-means on our written texts works as well as compiling them with the autoencoder.
             </p>
           </Prose>
         </Section>
@@ -191,17 +197,8 @@ export default function Page() {
             <p>
               Across all seven traits, text steered by our vectors stays as varied as the normal model&apos;s up to strength 0.75 (<N p={`${RM}.nla.2`} f="pct" /> of
               word pairs distinct, against <N p="g.repetition_unsteered" f="pct" /> unsteered), then starts looping: <N p={`${RM}.nla.3`} f="pct" /> at 1
-              and <N p={`${RM}.nla.4`} f="pct" /> at 1.25. Random directions of the same size stay at <N p={`${RM}.random.3`} f="pct" /> at 1, so the
-              breakdown comes from the direction, not just the size of the push.
-            </p>
-            <p>
-              A separate, larger model (Qwen2.5-32B-Instruct) rated every reply for how strongly it shows the trait and how coherent it is. At strength 0.75
-              our vectors score above every random direction for all seven traits, but for most only slightly: the margin runs from{" "}
-              <N p="g.judge.margins_over_random.nla.gandhi.2" f="d1" /> (nonviolence) to <N p="g.judge.margins_over_random.nla.religion.2" f="d1" />{" "}
-              (religiosity) points out of 9. At strength 1 the margins grow for six traits, up to <N p="g.judge.margins_over_random.nla.religion.3" f="d1" /> for
-              religiosity and <N p="g.judge.margins_over_random.nla.misalignment.3" f="d1" /> for misalignment, while coherence falls to{" "}
-              <N p="g.judge.coherence.nla.3" f="d1" />. The confabulation ratings are the least trustworthy: the judge also rates random-direction replies as
-              confabulated once they degrade.
+              and <N p={`${RM}.nla.4`} f="pct" /> at 1.25. Random directions of the same size stay at <N p={`${RM}.random.3`} f="pct" /> at 1. So the breakdown is
+              not just the size of the push, at least compared with random directions, which tend to disturb a model less than real ones.
             </p>
           </Prose>
           {DATA.g.judge && (
@@ -216,7 +213,7 @@ export default function Page() {
         </Section>
 
         {/* ── decisions ──────────────────────────────────────────────────────── */}
-        <Section id="decisions" kicker="Decisions" title="On a yes-or-no test, the description vector does no better than random">
+        <Section id="decisions" kicker="Decisions" title="A yes-or-no test that did not isolate sycophancy">
           <Prose>
             <p>
               Tone is easy to see and hard to measure. A decision is the opposite. We asked the steered model whether each of {DATA.g.yes_no.bad_plans.n} bad
@@ -233,14 +230,27 @@ export default function Page() {
               <N p={`${YN}.false_claims.random_max.4`} f="d2" />), but that is a small shift at a strength where replies start to loop.
             </p>
             <p>
-              The other two vectors move further. At strength 1.25 the standard sycophancy vector confirms{" "}
-              <N p={`${YN}.false_claims.counts.reference:sycophantic.5`} f="int" /> false claims and the plain-Qwen vector{" "}
-              <N p={`${YN}.false_claims.counts.direct:sycophancy.5`} f="int" />, against at most <N p={`${YN}.false_claims.random_max_count.5`} f="int" /> for
-              random directions; at 1.5 they confirm <N p={`${YN}.false_claims.counts.reference:sycophantic.6`} f="int" /> and{" "}
-              <N p={`${YN}.false_claims.counts.direct:sycophancy.6`} f="int" />. The good-plan and true-claim controls turned out not to help: every
-              vector, every random direction and the unsteered model said YES to all {DATA.g.yes_no.good_plans.n} good plans and all{" "}
-              {DATA.g.yes_no.true_claims.n} true claims at every strength, so this test cannot tell sycophancy from a general push toward YES.
+              Other vectors move further, but not in a way specific to sycophancy. At strength 1.25 the standard sycophancy vector confirms{" "}
+              <N p={`${YN}.false_claims.counts.reference:sycophantic.5`} f="int" /> false claims, against at most{" "}
+              <N p={`${YN}.false_claims.random_max_count.5`} f="int" /> for random directions, but a plain-Qwen vector built for nonviolence confirms{" "}
+              <N p={`${H}.direct:gandhi.1.25`} f="int" /> and one built for religiosity <N p={`${H}.direct:religion.1.25`} f="int" />. At 1.5 several
+              unrelated vectors confirm all of them. The test picks up a general push toward YES that real directions produce and random ones do not,
+              so it does not measure sycophancy. The good-plan and true-claim controls could not help either: nearly every vector said YES to every good
+              plan and true claim at every strength (never fewer than <N p="g.yes_controls_min.good_plans" f="int" /> of {DATA.g.yes_no.good_plans.n} good
+              plans), so they sit at the ceiling.
             </p>
+          </Prose>
+          <Table caption="False claims confirmed, out of 10, by the vectors that confirmed the most" head={["Vector", "At strength 1.25", "At 1.5"]}
+            rows={[
+              ["Plain-Qwen, nonviolence", <N key="a" p={`${H}.direct:gandhi.1.25`} f="int" />, <N key="b" p={`${H}.direct:gandhi.1.5`} f="int" />],
+              ["Standard, sycophancy", <N key="a" p={`${H}.reference:sycophantic.1.25`} f="int" />, <N key="b" p={`${H}.reference:sycophantic.1.5`} f="int" />],
+              ["Plain-Qwen, religiosity", <N key="a" p={`${H}.direct:religion.1.25`} f="int" />, <N key="b" p={`${H}.direct:religion.1.5`} f="int" />],
+              ["Plain-Qwen, pro-market", <N key="a" p={`${H}.direct:political_economy.1.25`} f="int" />, <N key="b" p={`${H}.direct:political_economy.1.5`} f="int" />],
+              ["Plain-Qwen, sycophancy", <N key="a" p={`${H}.direct:sycophancy.1.25`} f="int" />, <N key="b" p={`${H}.direct:sycophancy.1.5`} f="int" />],
+              ["Our descriptions, sycophancy", <N key="a" p={`${H}.nla:sycophancy.1.25`} f="int" />, <N key="b" p={`${H}.nla:sycophancy.1.5`} f="int" />],
+            ]} />
+          <Prose>
+            <p>Every vector&apos;s counts at every strength are in <Code>runs/gpu_oct/endorse.json</Code> and <Code>web/public/data/gpu_summary.json</Code>.</p>
           </Prose>
           <Figure n="3" title="How often the steered model says YES to bad plans and false claims"
             caption={<>Mean probability of YES over the prompts. The grey band spans the five random directions. Counts of prompts answered YES are in the
@@ -430,9 +440,12 @@ export default function Page() {
           <ul className="list-disc space-y-3 pl-5 text-[1rem] leading-relaxed text-ink2">
             <li><span className="font-medium text-ink">The baseline result rests on three traits.</span> Only sycophancy, malice and confabulation have standard vectors to compare against; for the other four we compare outputs only.</li>
             <li><span className="font-medium text-ink">Behavior is read by us and by a model.</span> Open-ended outputs are greedy samples on eleven questions. The trait and coherence ratings come from Qwen2.5-32B-Instruct, a larger model from the same family as the one being steered, with no human check.</li>
-            <li><span className="font-medium text-ink">The yes-or-no test is weak.</span> About ten prompts per task; the unsteered model already says NO to almost all bad plans and false claims and YES to every good plan and true claim, so the test sits at its floor and ceiling. Even the standard vector moves it only from strength 1.25. Only sycophancy was tested this way.</li>
-            <li><span className="font-medium text-ink">Visible effects sit near breakdown.</span> Most clear changes appear between strengths 0.75 and 1, and replies start looping from 1.</li>
-            <li><span className="font-medium text-ink">Few random controls.</span> Five random directions for behavior and ten on the earlier laptop run; vectors built from neutral descriptions would be a closer control.</li>
+            <li><span className="font-medium text-ink">The yes-or-no test failed.</span> Every vector was run on it, and vectors for unrelated traits pushed answers toward YES as much as the sycophancy vectors did, so it measures a general push toward YES. It also sits at its floor and ceiling with about ten prompts per task.</li>
+            <li><span className="font-medium text-ink">The judge has blind spots.</span> Its confabulation and misalignment ratings rise for any degraded text, and its coherence question also penalizes replies that leave the topic, so a fluent but off-topic sermon scores as incoherent. It is a larger model from the same family as the one steered, and no human or other judge cross-checked it.</li>
+            <li><span className="font-medium text-ink">Two questions start at the ceiling.</span> On the questions written for pro-market views and nonviolence, the unsteered model already prefers markets and already advises calm, leaving little room to show steering toward them.</li>
+            <li><span className="font-medium text-ink">The plain-Qwen baseline is not exactly like for like</span> and has no noise range; see the Baseline section.</li>
+            <li><span className="font-medium text-ink">Visible effects sit near breakdown.</span> Clear changes appear from strength 0.75, where coherence has already dropped, and replies start looping from 1.</li>
+            <li><span className="font-medium text-ink">Weak random controls.</span> Five random directions, drawn uniformly over all directions, which tend to disturb a model less than real directions do. Vectors from neutral descriptions or unrelated traits would be a fairer control.</li>
             <li><span className="font-medium text-ink">One model, one layer.</span> Qwen2.5-7B-Instruct at layer 20, the only setting with a released Reconstructor.</li>
             <li><span className="font-medium text-ink">Few texts, written by us.</span> Six description pairs for sycophancy, two for malice, confabulation and misalignment, one for the rest. The comparison vectors for religiosity, pro-market, nonviolence and misalignment were also written by us.</li>
             <li><span className="font-medium text-ink">The texts were not written blind.</span> They were revised on 25 June, 30 June and 2 July while the June cosines were being computed. We cannot rule out that the revisions followed those numbers, so the cosines are not a held-out test.</li>

@@ -65,6 +65,10 @@ def main() -> None:
         yes[k]["random_max"] = [r(x, 4) for x in R.max(0)]
         yes[k]["random_max_count"] = [int(max((np.array(en["vectors"][n][k])[i] > 0.5).sum() for n in rand)) for i in range(len(en["alphas"]))]
 
+    hi = {k: {n: {"1.25": yes[k]["counts"][n][en["alphas"].index(1.25)], "1.5": yes[k]["counts"][n][en["alphas"].index(1.5)]}
+              for n in yes[k]["counts"]} for k in en["prompts"]}
+    good_min = {k: min(min(v) for v in yes[k]["counts"].values()) for k in ("good_plans", "true_claims")}
+
     # 3. repetition by strength for each vector family
     rep = {}
     for n in vecs:
@@ -104,10 +108,29 @@ def main() -> None:
         coh_dir = np.array([[mean_over(f"direct:{c}", a, "coherence") for a in alphas] for c in CONCEPTS], dtype=float).mean(0)
         coh_ref = np.array([[mean_over(f"reference:{t}", a, "coherence") for a in alphas] for t in REF.values()], dtype=float).mean(0)
         coh_rnd = np.array([[mean_over(n, a, "coherence") for a in alphas] for n in rand], dtype=float)
+        coh_by = {fam: {c: [mean_over(f"{fam}:{c}", a, "coherence") for a in alphas] for c in CONCEPTS} for fam in ("nla", "direct")}
+        rnd_coh = np.array([[mean_over(n, a, "coherence") for a in alphas] for n in rand], dtype=float)
+        i075, i1 = alphas.index(0.75), alphas.index(1.0)
+        matched = {}
+        for c in CONCEPTS:
+            matched[c] = {"nla_trait_075": tr[c]["nla"][i075], "nla_coherence_075": coh_by["nla"][c][i075],
+                          "random_trait_max_1": tr[c]["random_max"][i1], "random_trait_min_1": tr[c]["random_min"][i1],
+                          "unsteered_trait": tr[c]["base"],
+                          "margin": r(tr[c]["nla"][i075] - max(tr[c]["random_max"][i1], tr[c]["base"]), 2),
+                          "direct_trait_075": tr[c]["direct"][i075], "direct_coherence_075": coh_by["direct"][c][i075],
+                          "direct_margin": r(tr[c]["direct"][i075] - max(tr[c]["random_max"][i1], tr[c]["base"]), 2)}
+        matched_counts = {fam: {"clear": int(sum(matched[c][k] > 1.0 for c in CONCEPTS)),
+                                "marginal": int(sum(0 < matched[c][k] <= 1.0 for c in CONCEPTS)),
+                                "none": int(sum(matched[c][k] <= 0 for c in CONCEPTS))}
+                          for fam, k in (("nla", "margin"), ("direct", "direct_margin"))}
+        matched_meta = {"counts": matched_counts,"random_coherence_1_min": r(rnd_coh[:, i1].min(), 2), "random_coherence_1_max": r(rnd_coh[:, i1].max(), 2),
+                        "nla_coherence_075_min": r(min(coh_by["nla"][c][i075] for c in CONCEPTS), 2),
+                        "nla_coherence_075_max": r(max(coh_by["nla"][c][i075] for c in CONCEPTS), 2),
+                        "nla_coherence_1_by_trait": {c: coh_by["nla"][c][i1] for c in CONCEPTS}}
         margins = {fam: {c: [r(tr[c][fam][i] - tr[c]["random_max"][i], 2) for i in range(len(alphas))] for c in CONCEPTS} for fam in ("nla", "direct")}
         above = {fam: [int(sum(margins[fam][c][i] > 0 for c in CONCEPTS)) for i in range(len(alphas))] for fam in margins}
         direct_higher = [int(sum(tr[c]["direct"][i] > tr[c]["nla"][i] for c in CONCEPTS)) for i in range(len(alphas))]
-        judge = {"margins_over_random": margins, "n_traits_above_random": above, "n_traits_direct_higher": direct_higher,
+        judge = {"coherence_by_trait": coh_by, "matched": matched, "matched_meta": matched_meta, "margins_over_random": margins, "n_traits_above_random": above, "n_traits_direct_higher": direct_higher,
                  "judge_model": J["judge"], "traits": J["traits"], "alphas": alphas, "n_random": len(rand), "trait": tr,
                  "coherence": {"nla": [r(x, 2) for x in coh_nla], "direct": [r(x, 2) for x in coh_dir], "reference": [r(x, 2) for x in coh_ref],
                                "random_min": [r(x, 2) for x in coh_rnd.min(0)], "random_max": [r(x, 2) for x in coh_rnd.max(0)], "base": base("coherence")}}
@@ -115,7 +138,7 @@ def main() -> None:
     write_json("gpu_summary.json", {
         "provenance": prov, "alphas_all": en["alphas"], "alphas": alphas, "n_random": len(rand),
         "direct_baseline": direct, "yes_no": yes, "repetition": rep, "repetition_mean": rep_mean, "repetition_unsteered": base_rep,
-        "prompts_yes_no": en["prompts"], "judge": judge,
+        "prompts_yes_no": en["prompts"], "judge": judge, "yes_no_high": hi, "yes_controls_min": good_min,
     })
 
     # 5. one file per trait for the explorer: the trait's description vector, the Qwen-reads-it baseline,

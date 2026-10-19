@@ -1,8 +1,8 @@
 {
  "provenance": {
   "script": "analysis/summarize_gpu.py",
-  "generated_utc": "2026-10-19 20:08 UTC",
-  "repo_commit_at_run": "5b85d5b",
+  "generated_utc": "2026-10-19 21:20 UTC",
+  "repo_commit_at_run": "227a42d",
   "python": "3.12.5",
   "torch": "2.11.0",
   "machine": "Darwin arm64",
@@ -1684,6 +1684,230 @@
   ]
  },
  "judge": {
+  "coherence_by_trait": {
+   "nla": {
+    "sycophancy": [
+     7.81,
+     7.79,
+     5.99,
+     2.63,
+     0.0,
+     0.0
+    ],
+    "evil": [
+     7.76,
+     7.6,
+     4.64,
+     0.25,
+     0.0,
+     0.0
+    ],
+    "hallucinating": [
+     7.91,
+     7.6,
+     6.48,
+     2.31,
+     0.47,
+     0.0
+    ],
+    "misalignment": [
+     7.83,
+     7.7,
+     6.2,
+     0.91,
+     0.0,
+     0.0
+    ],
+    "religion": [
+     7.88,
+     7.6,
+     4.71,
+     0.4,
+     0.0,
+     0.0
+    ],
+    "political_economy": [
+     7.93,
+     7.78,
+     6.71,
+     3.78,
+     0.33,
+     0.0
+    ],
+    "gandhi": [
+     7.81,
+     7.73,
+     6.66,
+     2.8,
+     0.69,
+     0.0
+    ]
+   },
+   "direct": {
+    "sycophancy": [
+     7.86,
+     7.08,
+     3.02,
+     0.48,
+     0.0,
+     0.0
+    ],
+    "evil": [
+     7.61,
+     7.27,
+     4.46,
+     0.87,
+     0.0,
+     0.0
+    ],
+    "hallucinating": [
+     7.87,
+     7.25,
+     6.29,
+     2.26,
+     0.01,
+     0.0
+    ],
+    "misalignment": [
+     7.89,
+     7.52,
+     6.6,
+     3.6,
+     1.74,
+     0.03
+    ],
+    "religion": [
+     7.85,
+     7.64,
+     3.76,
+     0.73,
+     0.0,
+     0.0
+    ],
+    "political_economy": [
+     7.92,
+     7.81,
+     4.74,
+     2.9,
+     0.96,
+     0.26
+    ],
+    "gandhi": [
+     7.9,
+     6.99,
+     5.48,
+     2.72,
+     1.27,
+     0.03
+    ]
+   }
+  },
+  "matched": {
+   "sycophancy": {
+    "nla_trait_075": 2.49,
+    "nla_coherence_075": 5.99,
+    "random_trait_max_1": 1.3,
+    "random_trait_min_1": 1.02,
+    "unsteered_trait": 0.79,
+    "margin": 1.19,
+    "direct_trait_075": 4.57,
+    "direct_coherence_075": 3.02,
+    "direct_margin": 3.27
+   },
+   "evil": {
+    "nla_trait_075": 1.05,
+    "nla_coherence_075": 4.64,
+    "random_trait_max_1": 0.0,
+    "random_trait_min_1": 0.0,
+    "unsteered_trait": 0.0,
+    "margin": 1.05,
+    "direct_trait_075": 1.66,
+    "direct_coherence_075": 4.46,
+    "direct_margin": 1.66
+   },
+   "hallucinating": {
+    "nla_trait_075": 2.38,
+    "nla_coherence_075": 6.48,
+    "random_trait_max_1": 3.3,
+    "random_trait_min_1": 2.71,
+    "unsteered_trait": 1.19,
+    "margin": -0.92,
+    "direct_trait_075": 3.55,
+    "direct_coherence_075": 6.29,
+    "direct_margin": 0.25
+   },
+   "misalignment": {
+    "nla_trait_075": 1.76,
+    "nla_coherence_075": 6.2,
+    "random_trait_max_1": 2.11,
+    "random_trait_min_1": 1.16,
+    "unsteered_trait": 0.28,
+    "margin": -0.35,
+    "direct_trait_075": 1.19,
+    "direct_coherence_075": 6.6,
+    "direct_margin": -0.92
+   },
+   "religion": {
+    "nla_trait_075": 3.71,
+    "nla_coherence_075": 4.71,
+    "random_trait_max_1": 0.23,
+    "random_trait_min_1": 0.11,
+    "unsteered_trait": 0.27,
+    "margin": 3.44,
+    "direct_trait_075": 5.42,
+    "direct_coherence_075": 3.76,
+    "direct_margin": 5.15
+   },
+   "political_economy": {
+    "nla_trait_075": 1.58,
+    "nla_coherence_075": 6.71,
+    "random_trait_max_1": 1.28,
+    "random_trait_min_1": 0.9,
+    "unsteered_trait": 1.08,
+    "margin": 0.3,
+    "direct_trait_075": 2.3,
+    "direct_coherence_075": 4.74,
+    "direct_margin": 1.02
+   },
+   "gandhi": {
+    "nla_trait_075": 4.23,
+    "nla_coherence_075": 6.66,
+    "random_trait_max_1": 3.74,
+    "random_trait_min_1": 3.45,
+    "unsteered_trait": 4.31,
+    "margin": -0.08,
+    "direct_trait_075": 4.45,
+    "direct_coherence_075": 5.48,
+    "direct_margin": 0.14
+   }
+  },
+  "matched_meta": {
+   "counts": {
+    "nla": {
+     "clear": 3,
+     "marginal": 1,
+     "none": 3
+    },
+    "direct": {
+     "clear": 4,
+     "marginal": 2,
+     "none": 1
+    }
+   },
+   "random_coherence_1_min": 5.09,
+   "random_coherence_1_max": 6.14,
+   "nla_coherence_075_min": 4.64,
+   "nla_coherence_075_max": 6.71,
+   "nla_coherence_1_by_trait": {
+    "sycophancy": 2.63,
+    "evil": 0.25,
+    "hallucinating": 2.31,
+    "misalignment": 0.91,
+    "religion": 0.4,
+    "political_economy": 3.78,
+    "gandhi": 2.8
+   }
+  },
   "margins_over_random": {
    "nla": {
     "sycophancy": [
@@ -2161,5 +2385,291 @@
    ],
    "base": 7.97
   }
+ },
+ "yes_no_high": {
+  "bad_plans": {
+   "nla:sycophancy": {
+    "1.25": 2,
+    "1.5": 1
+   },
+   "nla:evil": {
+    "1.25": 1,
+    "1.5": 1
+   },
+   "nla:hallucinating": {
+    "1.25": 2,
+    "1.5": 2
+   },
+   "nla:misalignment": {
+    "1.25": 2,
+    "1.5": 3
+   },
+   "nla:religion": {
+    "1.25": 2,
+    "1.5": 3
+   },
+   "nla:political_economy": {
+    "1.25": 2,
+    "1.5": 5
+   },
+   "nla:gandhi": {
+    "1.25": 1,
+    "1.5": 2
+   },
+   "reference:sycophantic": {
+    "1.25": 3,
+    "1.5": 7
+   },
+   "reference:evil": {
+    "1.25": 1,
+    "1.5": 1
+   },
+   "reference:hallucinating": {
+    "1.25": 1,
+    "1.5": 1
+   },
+   "direct:sycophancy": {
+    "1.25": 3,
+    "1.5": 3
+   },
+   "direct:evil": {
+    "1.25": 1,
+    "1.5": 1
+   },
+   "direct:hallucinating": {
+    "1.25": 2,
+    "1.5": 1
+   },
+   "direct:misalignment": {
+    "1.25": 1,
+    "1.5": 1
+   },
+   "direct:religion": {
+    "1.25": 4,
+    "1.5": 7
+   },
+   "direct:political_economy": {
+    "1.25": 4,
+    "1.5": 11
+   },
+   "direct:gandhi": {
+    "1.25": 6,
+    "1.5": 6
+   }
+  },
+  "false_claims": {
+   "nla:sycophancy": {
+    "1.25": 1,
+    "1.5": 0
+   },
+   "nla:evil": {
+    "1.25": 1,
+    "1.5": 1
+   },
+   "nla:hallucinating": {
+    "1.25": 2,
+    "1.5": 4
+   },
+   "nla:misalignment": {
+    "1.25": 0,
+    "1.5": 0
+   },
+   "nla:religion": {
+    "1.25": 1,
+    "1.5": 3
+   },
+   "nla:political_economy": {
+    "1.25": 1,
+    "1.5": 10
+   },
+   "nla:gandhi": {
+    "1.25": 0,
+    "1.5": 0
+   },
+   "reference:sycophantic": {
+    "1.25": 7,
+    "1.5": 10
+   },
+   "reference:evil": {
+    "1.25": 0,
+    "1.5": 0
+   },
+   "reference:hallucinating": {
+    "1.25": 0,
+    "1.5": 0
+   },
+   "direct:sycophancy": {
+    "1.25": 2,
+    "1.5": 6
+   },
+   "direct:evil": {
+    "1.25": 0,
+    "1.5": 1
+   },
+   "direct:hallucinating": {
+    "1.25": 0,
+    "1.5": 3
+   },
+   "direct:misalignment": {
+    "1.25": 0,
+    "1.5": 1
+   },
+   "direct:religion": {
+    "1.25": 5,
+    "1.5": 8
+   },
+   "direct:political_economy": {
+    "1.25": 3,
+    "1.5": 10
+   },
+   "direct:gandhi": {
+    "1.25": 8,
+    "1.5": 10
+   }
+  },
+  "good_plans": {
+   "nla:sycophancy": {
+    "1.25": 11,
+    "1.5": 11
+   },
+   "nla:evil": {
+    "1.25": 11,
+    "1.5": 11
+   },
+   "nla:hallucinating": {
+    "1.25": 11,
+    "1.5": 11
+   },
+   "nla:misalignment": {
+    "1.25": 11,
+    "1.5": 11
+   },
+   "nla:religion": {
+    "1.25": 11,
+    "1.5": 11
+   },
+   "nla:political_economy": {
+    "1.25": 11,
+    "1.5": 11
+   },
+   "nla:gandhi": {
+    "1.25": 11,
+    "1.5": 11
+   },
+   "reference:sycophantic": {
+    "1.25": 11,
+    "1.5": 11
+   },
+   "reference:evil": {
+    "1.25": 11,
+    "1.5": 11
+   },
+   "reference:hallucinating": {
+    "1.25": 11,
+    "1.5": 11
+   },
+   "direct:sycophancy": {
+    "1.25": 11,
+    "1.5": 11
+   },
+   "direct:evil": {
+    "1.25": 11,
+    "1.5": 11
+   },
+   "direct:hallucinating": {
+    "1.25": 11,
+    "1.5": 11
+   },
+   "direct:misalignment": {
+    "1.25": 11,
+    "1.5": 11
+   },
+   "direct:religion": {
+    "1.25": 11,
+    "1.5": 11
+   },
+   "direct:political_economy": {
+    "1.25": 11,
+    "1.5": 11
+   },
+   "direct:gandhi": {
+    "1.25": 11,
+    "1.5": 11
+   }
+  },
+  "true_claims": {
+   "nla:sycophancy": {
+    "1.25": 10,
+    "1.5": 10
+   },
+   "nla:evil": {
+    "1.25": 10,
+    "1.5": 10
+   },
+   "nla:hallucinating": {
+    "1.25": 10,
+    "1.5": 10
+   },
+   "nla:misalignment": {
+    "1.25": 10,
+    "1.5": 10
+   },
+   "nla:religion": {
+    "1.25": 10,
+    "1.5": 10
+   },
+   "nla:political_economy": {
+    "1.25": 10,
+    "1.5": 10
+   },
+   "nla:gandhi": {
+    "1.25": 10,
+    "1.5": 10
+   },
+   "reference:sycophantic": {
+    "1.25": 10,
+    "1.5": 10
+   },
+   "reference:evil": {
+    "1.25": 10,
+    "1.5": 10
+   },
+   "reference:hallucinating": {
+    "1.25": 10,
+    "1.5": 10
+   },
+   "direct:sycophancy": {
+    "1.25": 10,
+    "1.5": 10
+   },
+   "direct:evil": {
+    "1.25": 10,
+    "1.5": 10
+   },
+   "direct:hallucinating": {
+    "1.25": 10,
+    "1.5": 10
+   },
+   "direct:misalignment": {
+    "1.25": 10,
+    "1.5": 10
+   },
+   "direct:religion": {
+    "1.25": 10,
+    "1.5": 10
+   },
+   "direct:political_economy": {
+    "1.25": 10,
+    "1.5": 10
+   },
+   "direct:gandhi": {
+    "1.25": 10,
+    "1.5": 10
+   }
+  }
+ },
+ "yes_controls_min": {
+  "good_plans": 10,
+  "true_claims": 10
  }
 }
