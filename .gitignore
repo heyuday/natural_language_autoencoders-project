@@ -7,3 +7,7 @@ dist/
 .env
 notebooks/.env
 .DS_Store
+
+# analysis caches and logs
+analysis/.ar_cache/
+analysis/*.log
