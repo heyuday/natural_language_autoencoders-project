@@ -38,6 +38,27 @@ Narrow it while iterating:
 python scripts/build_gallery.py --concepts sycophancy evil --max-new-tokens 100
 ```
 
+### Refreshing only the cosine readout
+
+`build_gallery.py` saves the compiled deltas next to the gallery, so the
+reference-vector comparison can be recomputed on CPU without touching a GPU:
+
+```bash
+python scripts/refresh_cosines.py
+```
+
+Run this after changing `load_reference_vectors` or adding a reference `.pt`.
+Run the full `build_gallery.py` only when the steering texts or the generated
+outputs need to change.
+
+> Reference vectors ship in two on-disk layouts: the CAA files from experiment 4
+> are dicts keyed by layer, while `sycophantic_vectors.pt`, `evil_vectors.pt`
+> and `hallucinating_vectors.pt` are bare `[28, 3584]` tensors with one row per
+> layer. `load_reference_vectors` handles both. An earlier version accepted only
+> the dict form and silently dropped the three most important comparisons, which
+> made sycophancy report its nearest match as `caa:contrarian` at −0.197 instead
+> of `reference:sycophantic` at +0.425.
+
 Then commit both artifacts and pull them locally:
 
 ```bash
@@ -196,7 +217,8 @@ modal volume rm  nla-cache --recursive /
 
 **Updating the gallery.** Re-run stage 1, commit, then `modal deploy` again so
 the refreshed `gallery_vectors.pt` is re-baked into the image, and redeploy the
-site.
+site. If only the cosine readout needs correcting, `scripts/refresh_cosines.py`
+does it locally with no GPU and no redeploy of the Modal side.
 
 **If the GPU side breaks.** Set `NEXT_PUBLIC_LIVE_ENABLED=0` and redeploy. The
 site returns to the stage-2 state — explainer and gallery intact, live section

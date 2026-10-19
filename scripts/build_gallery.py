@@ -80,7 +80,14 @@ def vector_id(pos_text: str, neg_text: str) -> str:
 def load_reference_vectors(repo: Path) -> dict[str, torch.Tensor]:
     """Every saved .pt reference vector, unit-normalized, keyed by display name.
 
-    Files are dicts keyed by layer; we take [STEER_LAYER].
+    Two on-disk layouts exist and both must be handled:
+
+      dict  {20: tensor[3584]}   the CAA vectors written by experiment 4
+      tensor tensor[28, 3584]    the original reference vectors, one row per
+                                 layer -- row 20 is the layer the NLA reads
+
+    Treating the second as unreadable silently drops sycophantic / evil /
+    hallucinating, which are the three most important comparisons on the page.
     """
     refs: dict[str, torch.Tensor] = {}
     for path in sorted(repo.glob("*_vectors.pt")):
@@ -90,11 +97,25 @@ def load_reference_vectors(repo: Path) -> dict[str, torch.Tensor]:
         except Exception as exc:  # noqa: BLE001
             print(f"  skip {path.name}: {exc}")
             continue
-        if not isinstance(blob, dict) or STEER_LAYER not in blob:
-            print(f"  skip {path.name}: no layer-{STEER_LAYER} key")
+
+        if isinstance(blob, dict):
+            if STEER_LAYER not in blob:
+                print(f"  skip {path.name}: dict without layer-{STEER_LAYER} key")
+                continue
+            vec = blob[STEER_LAYER]
+        elif torch.is_tensor(blob) and blob.ndim == 2:
+            if blob.shape[0] <= STEER_LAYER:
+                print(f"  skip {path.name}: only {blob.shape[0]} layers")
+                continue
+            vec = blob[STEER_LAYER]
+        elif torch.is_tensor(blob) and blob.ndim == 1:
+            vec = blob
+        else:
+            print(f"  skip {path.name}: unrecognised layout {type(blob).__name__}")
             continue
+
         kind = "caa" if path.stem.endswith("_caa_vectors") else "reference"
-        refs[f"{kind}:{name}"] = unit(blob[STEER_LAYER])
+        refs[f"{kind}:{name}"] = unit(vec)
     return refs
 
 

@@ -37,10 +37,11 @@ Models load one at a time and offload the previous one (AR -> target -> AV) to f
 | 22 | code | Step 1 geometry from compiled tensors: each derived vector (pos/neg/delta/center/pos-centered) vs conventional traits. |
 | 23 | code | Step 2: steer with absolute vs delta vectors at matched alphas, side by side. |
 | 24 | code | Step 3: center-of-mass geometry — mean pairwise cosine between concept centers, and cos(center, delta). |
-| 25 | code | **Single-text steering**: raw absolute vs background-subtracted vs delta on the sycophancy prompt — does subtracting `BACKGROUND` rescue one-text steering? |
-| 26 | md | Optional section: AV read-backs. |
-| 27 | code | Optional: offload target, load AV, verbalize the compiled vectors back to text. |
-| 28 | code | (empty) |
+| 25 | code | **Single-text steering**: raw absolute vs background-subtracted vs delta on a subjective prompt — does subtracting `BACKGROUND` rescue one-text steering? |
+| 26 | code | **Sycophancy endorse-rate**: forced YES/NO on confidently-bad plans across alpha (behavioral dose-response, no judge); saves `sycophancy_endorse_rate.png`. |
+| 27 | md | Optional section: AV read-backs. |
+| 28 | code | Optional: offload target, load AV, verbalize the compiled vectors back to text. |
+| 29 | code | (empty) |
 
 ## experiment2_register_gap.ipynb — what does the AR respond to, format or meaning?
 
