@@ -150,6 +150,14 @@ export function MethodsDetails() {
         answers; {v.n_exact} of {v.n_rows} compared outputs match exactly.</>}
       </p>
       <p>
+        <span className="font-medium text-ink">Behavior runs.</span> Figures 1 to 3 come from one run in full precision (bf16) on an A100 rented on Modal,
+        with the notebooks&apos; steering hook (<Code>analysis/gpu_behavior.py</Code>, <Code>serve/modal_batch.py</Code>). Generation is greedy, up to 160
+        tokens, batched across the eleven questions. The plain-Qwen baseline averages Qwen2.5-7B-Instruct&apos;s layer-20 activations over each
+        description&apos;s tokens. Ratings come from Qwen2.5-32B-Instruct, reading the probabilities of the digits 0 to 9 (<Code>analysis/gpu_judge.py</Code>).
+        An earlier version of the yes-or-no test and a sycophancy strength sweep ran on an 8-bit copy of the model on the laptop
+        (<Code>analysis/behavior.py</Code>); their results agree in direction and are kept in <Code>web/public/data/behavior_*.json</Code>.
+      </p>
+      <p>
         <span className="font-medium text-ink">CPU hosting.</span> A weight-only int8 copy of the Reconstructor, run on two CPU threads, matches the
         A100 vectors to a minimum cosine of <N p="int8.min_cos" f="d5" /> and compiles one description pair in <N p="int8.pair_seconds" f="d0" /> seconds on
         the same laptop (<Code>analysis/check_ar_int8.py</Code>). This is what the live panel&apos;s backend uses when no GPU is available.

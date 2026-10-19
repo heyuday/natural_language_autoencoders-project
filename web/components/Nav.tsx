@@ -5,6 +5,7 @@ import { useEffect, useState } from "react";
 const ITEMS = [
   ["see", "See it"],
   ["method", "How it works"],
+  ["autoencoder", "Baseline"],
   ["strength", "Strength"],
   ["decisions", "Decisions"],
   ["direction", "Direction"],

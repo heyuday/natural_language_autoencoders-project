@@ -27,7 +27,7 @@ function Panel({ title, sub, text, accent }: { title: string; sub?: string; text
     <div className={`rounded-lg border p-3 ${accent ? "border-s1" : "border-edge"}`}>
       <div className="mb-2 flex flex-wrap items-baseline justify-between gap-x-2">
         <p className="text-xs font-semibold text-ink">{title}</p>
-        {!Number.isNaN(d) && <p className="num text-[11px] text-muted" title="share of distinct word pairs; low values mean the text loops">variety {Math.round(d * 100)}%</p>}
+        {!Number.isNaN(d) && <p className="num text-[11px] text-muted" data-derived="computed from the reply text" title="share of distinct word pairs; low values mean the text loops">variety {Math.round(d * 100)}%</p>}
       </div>
       {sub && <p className="-mt-1 mb-2 text-[11px] text-muted">{sub}</p>}
       <div className="text-[0.9rem] leading-relaxed text-ink2" aria-live="polite"><ModelText text={text || "(empty reply)"} /></div>

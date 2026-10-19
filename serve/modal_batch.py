@@ -47,3 +47,21 @@ def experiment():
     subprocess.run(["python", "/root/repo/analysis/gpu_behavior.py", "--model", "/weights/qwen2.5-7b-instruct",
                     "--out", "/runs/gpu_oct"], check=True)
     runs.commit()
+
+
+@app.function(image=image, volumes={"/weights": weights}, timeout=3600)
+def download_judge():
+    from huggingface_hub import snapshot_download
+
+    snapshot_download("Qwen/Qwen2.5-32B-Instruct", local_dir="/weights/qwen2.5-32b-instruct")
+    weights.commit()
+    print("judge weights ready")
+
+
+@app.function(image=image, gpu="A100-80GB", volumes={"/weights": weights, "/runs": runs}, timeout=2 * 3600)
+def judge():
+    import subprocess
+
+    subprocess.run(["python", "/root/repo/analysis/gpu_judge.py", "--judge", "/weights/qwen2.5-32b-instruct",
+                    "--run", "/runs/gpu_oct"], check=True)
+    runs.commit()

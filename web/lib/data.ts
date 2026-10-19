@@ -10,11 +10,12 @@ import layer from "@/public/data/llamacpp_layer_check.json";
 import bsum from "@/public/data/behavior_summary.json";
 import int8 from "@/public/data/ar_int8_check.json";
 import x from "@/public/data/extra_controls.json";
+import g from "@/public/data/gpu_summary.json";
 import gallery from "@/public/data/site_meta.json";
 export { fmt, LABEL, REF_LABEL, type Fmt } from "./labels";
 import { fmt } from "./labels";
 
-export const DATA = { saved, ar, texts, layer, bsum, int8, x, gallery } as const;
+export const DATA = { saved, ar, texts, layer, bsum, int8, x, g, gallery } as const;
 
 export const FILES: Record<keyof typeof DATA, { file: string; script: string; kind: string }> = {
   saved: { file: "web/public/data/saved_artifacts.json", script: "analysis/saved_artifacts.py", kind: "recomputed from tensors saved in the repo" },
@@ -22,6 +23,7 @@ export const FILES: Record<keyof typeof DATA, { file: string; script: string; ki
   texts: { file: "web/public/data/texts.json", script: "analysis/export_texts.py", kind: "export of nla_texts.py" },
   layer: { file: "web/public/data/llamacpp_layer_check.json", script: "analysis/check_llamacpp_layer.py", kind: "new check, Oct 2026" },
   bsum: { file: "web/public/data/behavior_summary.json", script: "analysis/summarize_behavior.py", kind: "new experiment, Oct 2026" },
+  g: { file: "web/public/data/gpu_summary.json", script: "analysis/summarize_gpu.py", kind: "new experiment, bf16 on an A100 (Modal), Oct 2026" },
   x: { file: "web/public/data/extra_controls.json", script: "analysis/extra_controls.py", kind: "new analysis on saved data, Oct 2026" },
   int8: { file: "web/public/data/ar_int8_check.json", script: "analysis/check_ar_int8.py", kind: "new check, Oct 2026" },
   gallery: { file: "web/public/data/site_meta.json", script: "analysis/export_site_meta.py", kind: "fields copied from the original A100 gallery (scripts/build_gallery.py, Aug 2026)" },

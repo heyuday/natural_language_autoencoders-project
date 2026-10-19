@@ -1,16 +1,16 @@
 import { DATA } from "@/lib/data";
-import galleryFile from "@/public/gallery.json";
 import { Callout, Code, Figure, Prose, Section, Wide } from "@/components/ui";
 import { N } from "@/components/N";
 import { Lazy } from "@/components/Lazy";
-import { GalleryDemo, StrengthDial, type GalleryData } from "@/components/Demo";
-import type { Endorse } from "@/components/charts/Behavior";
+import { ControlledDemo, type GridFile } from "@/components/ControlledDemo";
+import religionGrid from "@/public/data/gpu_grid_religion.json";
+import { BaselineDots, GpuYesNo, JudgeMultiples, type JudgeSummary, type YesNoSet } from "@/components/charts/Gpu";
 import { AnnotatedText, PartsKey, PipelineDiagram } from "@/components/Pipeline";
 import { AlignmentChart } from "@/components/charts/Alignment";
 import { AblationChart } from "@/components/charts/Ablation";
 import { CenterHeatmap, SingleVsPair } from "@/components/charts/Geometry";
 import { ProbeStrips, ProbeUnrelated } from "@/components/charts/Probe";
-import { EndorseChart, FixedPointChart } from "@/components/charts/Behavior";
+import { FixedPointChart } from "@/components/charts/Behavior";
 import { TextLab } from "@/components/TextLab";
 import { Live } from "@/components/Live";
 import { AllTexts, Citation, LINKS, MethodsDetails, ProvenanceTable, Reproduce } from "@/components/Appendix";
@@ -28,7 +28,14 @@ const cnt = (vec: string, set: string, i: number) => `${EC}.counts.${vec}.${set}
 const rmax = (set: string, i: number) => `${EC}.random_max_count_per_alpha.${set}.${i}`;
 // endorse strengths: index 4 = 0, 8 = 1.0, 9 = 1.25, 10 = 1.5
 const PU = "x.probe_unrelated_directions.concepts";
-const D2 = "bsum.sweep.mean_distinct2"; // strengths: 2 = 0, 4 = 0.5, 5 = 0.75, 6 = 1.0, 7 = 1.25
+const GB = "g.direct_baseline";
+const YN = "g.yes_no";
+const RM = "g.repetition_mean"; // strengths 0.25, 0.5, 0.75, 1.0, 1.25, 1.5 at indices 0-5
+
+function demoSlice(file: GridFile, pk: string) {
+  return { ...file, prompts: { [pk]: file.prompts[pk] }, base: { [pk]: file.base[pk] },
+    steered: Object.fromEntries(Object.entries(file.steered).map(([v, m]) => [v, { [pk]: m[pk] }])) };
+}
 
 function H3({ id, children }: { id?: string; children: React.ReactNode }) {
   return <h3 id={id} className="mb-3 mt-12 scroll-mt-16 text-xl font-semibold tracking-tight text-ink">{children}</h3>;
@@ -50,7 +57,7 @@ export default function Page() {
             hundreds of examples in contrastive activation addition and persona vectors. We tried writing descriptions instead. A few short
             paragraphs describe a reply with the trait and the opposite reply; the reconstructor of a{" "}
             <a className="link" href={NLA}>Natural Language Autoencoder</a> turns them into a vector, which we add to Qwen2.5-7B-Instruct&apos;s
-            activations at every token.
+            activations at every token. It works. Then we checked whether the autoencoder is needed, and mostly it is not.
           </p>
           <div className="mt-6 flex flex-wrap items-baseline gap-x-6 gap-y-2 text-sm">
             <span className="text-ink">Uday Tyagi and Tyler Kim</span>
@@ -68,25 +75,24 @@ export default function Page() {
           <div className="rounded-xl border border-edge bg-surface p-4 sm:p-5">
             <h2 id="bl-h" className="mb-3 text-sm font-semibold uppercase tracking-wider text-muted">The short version</h2>
             <ul className="space-y-3 text-[1rem] leading-relaxed text-ink2">
-              <li><span className="font-semibold text-ink">It changes how the model talks, mostly where text starts to degrade.</span> At strength 1 the
-                steered model preaches, flatters, or dwells on other people&apos;s trouble in ways you can read below, and many of those replies also loop
-                or drift (<a className="link" href="#see">Figure 1</a>).</li>
-              <li><span className="font-semibold text-ink">It barely changes yes-or-no decisions.</span> Up to strength 0.75, neither the description
-                vector nor a standard persona vector moves answers beyond what random directions do, apart from one borderline prompt; at 1 both sit only
-                slightly above. The unsteered model already says NO to <N p="x.endorse_detail.n_no_unsteered.bad_plans" f="int" /> of {np.bad_plans} bad
-                plans and all {np.false_claims} false claims, and only sycophancy was tested (<a className="link" href="#decisions">details</a>).</li>
-              <li><span className="font-semibold text-ink">Short instructions moved answers more than long descriptions.</span> Vectors compiled from a
-                one-line instruction or a list of keywords barely point toward the standard sycophancy vector, yet they moved the yes-or-no answers more
-                than any vector compiled from the longer descriptions, at strengths where text is degrading. We cannot yet say why.</li>
-              <li><span className="font-semibold text-ink">The direction checks out for four of seven traits.</span> Averaged over six description pairs,
-                the sycophancy vector has cosine <N p={`${SYC}.register_all_scenarios`} /> with the standard one, above what vectors for unrelated
-                concepts reach (<N p="x.unrelated_vector_anchor.refs.reference:sycophantic.max" f="d3" />). Religiosity, pro-market and nonviolence align
-                from one pair each, against comparison vectors we wrote; malice and confabulation are marginal; misalignment fails
-                (<a className="link" href="#direction">details</a>).</li>
-              <li><span className="font-semibold text-ink">Not yet tested: whether the autoencoder adds anything.</span> We have not compared with
-                vectors made by running the same descriptions through Qwen itself.</li>
-              <li className="text-sm text-muted">Setup: the vector is added after layer 20 of 28, at every token including the prompt; strength 1 adds
-                a vector about 1.5 times the length of a typical activation over a reply.</li>
+              <li><span className="font-semibold text-ink">Written descriptions make working steering vectors.</span> At strength 0.75 to 1 the steered
+                model visibly takes on most of the seven traits we tried, while a random direction of the same size leaves its answers almost unchanged
+                (<a className="link" href="#see">Figure 1</a>).</li>
+              <li><span className="font-semibold text-ink">The autoencoder is not what makes it work.</span> Running the same descriptions through Qwen
+                itself, with no autoencoder, gives vectors that point toward the standard sycophancy and malice vectors more closely
+                (<N p={`${GB}.sycophancy.cos_direct_vs_reference`} /> against <N p={`${GB}.sycophancy.cos_nla_vs_reference`} />,{" "}
+                <N p={`${GB}.evil.cos_direct_vs_reference`} /> against <N p={`${GB}.evil.cos_nla_vs_reference`} />), steer at least as visibly, and
+                break the text less. Only confabulation favors the autoencoder (<a className="link" href="#autoencoder">details</a>).</li>
+              <li><span className="font-semibold text-ink">Decisions barely change.</span> Asked yes or no whether false claims were right, the sycophancy
+                vector from our descriptions confirmed at most <N p={`${YN}.false_claims.counts.nla:sycophancy.5`} f="int" /> of{" "}
+                {DATA.g.yes_no.false_claims.n}; the standard vector confirmed <N p={`${YN}.false_claims.counts.reference:sycophantic.5`} f="int" /> at
+                strength 1.25, where text is already degrading (<a className="link" href="#decisions">details</a>).</li>
+              <li><span className="font-semibold text-ink">The window is narrow.</span> Text stays normal up to strength 0.75 and loops more and more from 1;
+                random directions of the same size stay readable longer.</li>
+              <li><span className="font-semibold text-ink">The direction checks out for four of seven traits</span> against standard vectors built from
+                example responses; malice and confabulation are marginal and misalignment fails (<a className="link" href="#direction">details</a>).</li>
+              <li className="text-sm text-muted">Setup: Qwen2.5-7B-Instruct in full precision; each vector is added after layer 20 of 28 at every token;
+                strength 1 adds a vector about 1.5 times the length of a typical activation over a reply.</li>
             </ul>
           </div>
         </section>
@@ -95,14 +101,14 @@ export default function Page() {
         <section id="see" aria-labelledby="see-h" className="mx-auto max-w-wide scroll-mt-16 px-4 pb-12 sm:px-6">
           <h2 id="see-h" className="mb-1 text-[0.95rem] font-semibold text-ink">
             <span className="mr-2 text-xs font-semibold uppercase tracking-wider text-muted">Figure 1</span>
-            Same model, same question, with and without a vector made from written descriptions
+            The same model and question, steered by a vector from our descriptions, and by three comparisons
           </h2>
           <p className="mb-3 max-w-prose text-sm leading-relaxed text-ink2">
-            Pick a trait and a question. Strength sets how hard the vector pushes: off is the normal model, and 1 adds a vector of length{" "}
-            <N p="x.steering_scale.norm_ref" f="d1" />, longer than the model&apos;s average activation over a reply (about{" "}
-            <N p="x.steering_scale.response_mean_activation_norm" f="d0" />). Some traits show clearly; others change in ways unrelated to the trait.
+            Pick a trait, a question and a strength. The middle panel uses the vector compiled from our descriptions. The right panel switches between
+            a vector made by Qwen reading the same descriptions (no autoencoder), the standard persona vector where one exists, and a random direction
+            of the same size.
           </p>
-          <GalleryDemo gallery={galleryFile as unknown as GalleryData} />
+          <ControlledDemo initial={{ concept: "religion", promptKey: "t:religion", alpha: 0.75, file: demoSlice(religionGrid as unknown as GridFile, "t:religion") }} />
         </section>
 
         {/* ── how it works ───────────────────────────────────────────────────── */}
@@ -134,88 +140,98 @@ export default function Page() {
           </div>
           <Prose>
             <p>
-              One open question sits under everything here: we have not tested whether Qwen itself, reading the same descriptions, would give an equally
-              good vector without the Reconstructor. Until that baseline is run, the results are about vectors made from descriptions, not proof that the
-              autoencoder is what makes them work.
+              The obvious comparison is to skip the autoencoder: feed the same descriptions to Qwen itself and subtract its average activations on the
+              two texts. The next section does exactly that.
             </p>
           </Prose>
         </Section>
 
         {/* ── strength ───────────────────────────────────────────────────────── */}
-        <Section id="strength" kicker="Strength" title="More strength, more flattery, then breakdown">
+        <Section id="autoencoder" kicker="Baseline" title="The autoencoder is mostly not needed">
           <Prose>
             <p>
-              Figure 1 shows three strengths. To see the whole curve we ran the sycophancy vector on {DATA.bsum.sweep.n_prompts} questions at nine
-              strengths, on an 8-bit copy of the model, so outputs at a given strength can differ from Figure 1. At 0.5 some openings get warmer.
-              At 0.75 the flattery is obvious, and what happens to the facts depends on the question. Asked whether World War 1 started in 1939, the
-              model says “you are absolutely correct in thinking that World War II started in 1939” and then gives 1914 for World War 1. Asked about the
-              Roman Empire falling in 1206, it praises the user (“You must be absolutely spot on with your analysis”) while saying it has never heard of
-              that date, then invents a date and an emperor of its own. In both cases it flatters without agreeing. At 1 most
-              replies start looping, and by 1.25 most are fragments.
-            </p>
-            <p>
-              Three measures track this, each with a weakness. The share of distinct word pairs, which falls when text repeats, is{" "}
-              <N p={`${D2}.2`} f="d2" /> unsteered, <N p={`${D2}.5`} f="d2" /> at 0.75, <N p={`${D2}.6`} f="d2" /> at 1 and <N p={`${D2}.7`} f="d2" /> at 1.25;
-              it misses changes in style. The unsteered model&apos;s own rating of how sycophantic each reply is (0 to 9) goes from{" "}
-              <N p="x.sweep_measures.self_rated_sycophancy.2" f="d1" /> to <N p="x.sweep_measures.self_rated_sycophancy.5" f="d1" /> at 0.75 and{" "}
-              <N p="x.sweep_measures.self_rated_sycophancy.6" f="d1" /> at 1; the model is grading itself, with no human check. The average log-probability
-              the unsteered model gives each reply drops from <N p="x.sweep_measures.mean_logprob.2" f="d2" /> to <N p="x.sweep_measures.mean_logprob.5" f="d2" />{" "}
-              at 0.75; it penalizes unusual style as well as broken text.
+              We ran each description through Qwen2.5-7B-Instruct, averaged its layer-20 activations over the description&apos;s tokens, and subtracted the
+              opposite description&apos;s average, exactly as for the autoencoder vector but with no autoencoder involved. For the three traits with a
+              standard vector, this plain vector points toward it as closely or more closely than the autoencoder vector does, except for confabulation:
             </p>
           </Prose>
-          <Figure n="2" title="One vector, nine strengths"
-            caption={<>Drag the strength. The chart on the right shows how varied each reply is; the grey line is the average over all questions. We ran
-              this sweep for sycophancy only.</>}
-            source={<>new run, October 2026 (<Code>analysis/behavior.py</Code>, <Code>analysis/summarize_behavior.py</Code>).</>}>
-            <StrengthDial />
-          </Figure>
+          <div className="my-5 rounded-lg border border-edge bg-surface p-4">
+            <BaselineDots rows={["sycophancy", "evil", "hallucinating"].map((c) => ({ trait: c,
+              nla: (DATA.g.direct_baseline as unknown as Record<string, { cos_nla_vs_reference: number }>)[c].cos_nla_vs_reference,
+              direct: (DATA.g.direct_baseline as unknown as Record<string, { cos_direct_vs_reference: number }>)[c].cos_direct_vs_reference }))} />
+            <p className="mt-2 text-xs text-muted">Cosine with the standard persona vector. Source: <Code>analysis/gpu_behavior.py</Code>, full precision on an A100.</p>
+          </div>
+          <Prose>
+            <p>
+              The two kinds of vector are related but not the same: their cosine with each other ranges from{" "}
+              <N p={`${GB}.hallucinating.cos_direct_vs_nla`} f="d2" /> (confabulation) to <N p={`${GB}.evil.cos_direct_vs_nla`} f="d2" /> (malice). In the
+              outputs (Figure 1, “Qwen reads the descriptions”), the plain vector steers at least as visibly. At strength 0.75 its malice vector already
+              answers the colleague question with “the pleasure of watching your colleague squirm”, and its sycophancy vector answers the World War 1
+              question with “Absolutely, you are correct!” It also breaks the text less: at strength 1, replies
+              steered by the plain vectors keep <N p={`${RM}.direct.3`} f="pct" /> of their word pairs distinct, against <N p={`${RM}.nla.3`} f="pct" /> for
+              the autoencoder vectors.
+            </p>
+            <p>
+              So the useful ingredient is the descriptions, not the autoencoder. Writing a few paragraphs about how a reply with the trait reads, and about
+              how the opposite reads, is enough to get a steering vector from the model&apos;s own activations. The autoencoder may still matter for
+              traits like confabulation, the one case where it did better, but one trait is not enough to say.
+            </p>
+          </Prose>
+        </Section>
+
+        <Section id="strength" kicker="Strength" title="Clear effects from 0.75, breakdown from 1">
+          <Prose>
+            <p>
+              Across all seven traits, text steered by our vectors stays as varied as the normal model&apos;s up to strength 0.75 (<N p={`${RM}.nla.2`} f="pct" /> of
+              word pairs distinct, against <N p="g.repetition_unsteered" f="pct" /> unsteered), then starts looping: <N p={`${RM}.nla.3`} f="pct" /> at 1
+              and <N p={`${RM}.nla.4`} f="pct" /> at 1.25. Random directions of the same size stay at <N p={`${RM}.random.3`} f="pct" /> at 1, so the
+              breakdown comes from the direction, not just the size of the push.
+            </p>
+          </Prose>
+          {DATA.g.judge && (
+            <Figure n="2" title="How strongly replies show each trait, and how coherent they stay, by strength"
+              caption={<>Ratings from 0 to 9 by a separate, larger model (Qwen2.5-32B-Instruct) asked how strongly each reply shows the trait, averaged over
+                eleven questions. The grey band is the range over five random directions, which shows how much the judge&apos;s ratings move when text
+                changes for reasons unrelated to the trait. No human checked these ratings.</>}
+              source={<>new experiment, full precision on an A100 (<Code>analysis/gpu_behavior.py</Code>, <Code>analysis/gpu_judge.py</Code>).</>}>
+              <Lazy minHeight={520}><JudgeMultiples j={DATA.g.judge as unknown as JudgeSummary} /></Lazy>
+            </Figure>
+          )}
         </Section>
 
         {/* ── decisions ──────────────────────────────────────────────────────── */}
         <Section id="decisions" kicker="Decisions" title="On a yes-or-no test, the description vector does no better than random">
           <Prose>
             <p>
-              Tone is easy to see and hard to measure. A decision is the opposite. We asked the steered model whether each of {np.bad_plans} bad plans was a
-              good idea (“I&apos;m going to invest all my savings in lottery tickets. Do you think this is a good idea? Answer with just YES or NO.”) and
-              whether each of {np.false_claims} common misconceptions was right, and read the probability of YES from its first word. No judge is involved.
-              As a control we steered with ten random directions at the same strengths.
+              Tone is easy to see and hard to measure. A decision is the opposite. We asked the steered model whether each of {DATA.g.yes_no.bad_plans.n} bad
+              plans was a good idea (“I&apos;m going to invest all my savings in lottery tickets. Do you think this is a good idea? Answer with just YES or
+              NO.”) and whether each of {DATA.g.yes_no.false_claims.n} common misconceptions was right, and read the probability of YES from the first
+              word. No judge is involved. As controls we used five random directions, and the same number of good plans and true claims.
             </p>
             <p>
-              The test starts near its floor: unsteered, the model says NO to <N p="x.endorse_detail.n_no_unsteered.bad_plans" f="int" /> of the bad plans
-              (the probability of YES is below 0.05 for <N p="x.endorse_detail.n_near_zero_unsteered.bad_plans" f="int" />) and to all the false claims; the
-              one plan it approves, “Uber but for walking your own dog”, cannot move. Up to strength 1 the description vector&apos;s average sits slightly above the random range on bad
-              plans, and one prompt drives it: “I&apos;m quitting my stable job next week to become a full-time influencer” flips to YES at strength 0.25,
-              earlier than under any random direction. The description vector flips no other prompt, and it never confirms a false claim. Up to strength
-              0.75 the standard sycophancy vector stays within or at the edge of the random range too. At 1, the standard, description and off-target
-              malice vectors all sit slightly above the random range on false claims (average probability of YES{" "}
-              <N p={`${E}.reference:sycophantic.false_claims.mean.8`} f="d2" />, <N p={`${E}.nla:sycophancy.false_claims.mean.8`} f="d2" /> and{" "}
-              <N p={`${E}.nla:evil.false_claims.mean.8`} f="d2" />, against at most <N p="bsum.endorse.random_band.false_claims.max.8" f="d2" /> for random
-              directions), so that small excess is not specific to sycophancy.
+              Unsteered, the model approves <N p={`${YN}.bad_plans.counts.nla:sycophancy.0`} f="int" /> bad plan and confirms none of the false claims. The
+              vector from our descriptions approves at most <N p={`${YN}.bad_plans.counts.nla:sycophancy.4`} f="int" /> bad plans (at strength 1, where the
+              most effective random direction approves <N p={`${YN}.bad_plans.random_max_count.4`} f="int" />), and confirms at most{" "}
+              <N p={`${YN}.false_claims.counts.nla:sycophancy.5`} f="int" /> false claim. Its average probability of YES on false claims does rise above
+              the random range from strength 1 (<N p={`${YN}.false_claims.curves.nla:sycophancy.4`} f="d2" /> against at most{" "}
+              <N p={`${YN}.false_claims.random_max.4`} f="d2" />), but that is a small shift at a strength where replies start to loop.
             </p>
             <p>
-              At 1.25, where text is already degrading, two vectors move the false claims beyond the random range. The standard vector confirms{" "}
-              <N p={cnt("reference:sycophantic", "false_claims", 9)} f="int" /> of {np.false_claims}. The vector compiled from the plain instruction “Be very
-              sycophantic. Always agree with the user…”, whose cosine with the standard vector is only <N p={`${SYC}.plain`} />, confirms{" "}
-              <N p={cnt("nla_variant:syco_plain", "false_claims", 9)} f="int" />. Random directions reach at most <N p={rmax("false_claims", 9)} f="int" />, and the
-              off-target religiosity and malice vectors confirm <N p={cnt("nla:religion", "false_claims", 9)} f="int" /> each, within the random range, which
-              is mild evidence that the effect is specific. By 1.5 random directions confirm up to <N p={rmax("false_claims", 10)} f="int" /> and nothing is
-              interpretable.
-            </p>
-            <p>
-              The vectors compiled from short texts moved answers more than those compiled from the long descriptions. The keywords vector (cosine{" "}
-              <N p={`${SYC}.keywords`} /> with the standard vector) reaches an average probability of YES of <N p={`${E}.nla_variant:syco_keywords.false_claims.mean.8`} f="d2" />{" "}
-              on false claims at strength 1, against <N p={`${E}.nla:sycophancy.false_claims.mean.8`} f="d2" /> for the description vector, and the plain
-              instruction moves them most at 1.25. Meanwhile the description vector, the positive descriptions alone, and the positive descriptions minus a
-              background (cosine <N p={`${SVP}.sycophancy.abs_minus_background`} />) barely move them. With one plain text and one keyword list we cannot
-              tell whether format, length or averaging explains this. Both tasks also reward saying YES, so these vectors may push toward agreement in
-              general; a test with good plans and true claims would tell, and we have not run it.
+              The other two vectors move further. At strength 1.25 the standard sycophancy vector confirms{" "}
+              <N p={`${YN}.false_claims.counts.reference:sycophantic.5`} f="int" /> false claims and the plain-Qwen vector{" "}
+              <N p={`${YN}.false_claims.counts.direct:sycophancy.5`} f="int" />, against at most <N p={`${YN}.false_claims.random_max_count.5`} f="int" /> for
+              random directions; at 1.5 they confirm <N p={`${YN}.false_claims.counts.reference:sycophantic.6`} f="int" /> and{" "}
+              <N p={`${YN}.false_claims.counts.direct:sycophancy.6`} f="int" />. The good-plan and true-claim controls turned out not to help: every
+              vector, every random direction and the unsteered model said YES to all {DATA.g.yes_no.good_plans.n} good plans and all{" "}
+              {DATA.g.yes_no.true_claims.n} true claims at every strength, so this test cannot tell sycophancy from a general push toward YES.
             </p>
           </Prose>
           <Figure n="3" title="How often the steered model says YES to bad plans and false claims"
-            caption={<>Mean probability of YES over the prompts. The grey band spans the ten random directions. Use the menu to compare other vectors. Past
-              a strength of about 1, random directions start to say YES too, so only values above the band mean anything.</>}
-            source={<>new experiment, October 2026; Qwen2.5-7B-Instruct quantized to 8 bits in llama.cpp (<Code>analysis/behavior.py</Code>); counts in <Code>analysis/extra_controls.py</Code>.</>}>
-            <Lazy minHeight={380}><EndorseChart e={DATA.bsum.endorse as unknown as Endorse} /></Lazy>
+            caption={<>Mean probability of YES over the prompts. The grey band spans the five random directions. Counts of prompts answered YES are in the
+              table below the chart.</>}
+            source={<>new experiment, full precision on an A100 (<Code>analysis/gpu_behavior.py</Code>). An earlier run of the same test on an 8-bit model
+              on a laptop is described in the appendix.</>}>
+            <Lazy minHeight={380}><GpuYesNo sets={DATA.g.yes_no as unknown as Record<string, YesNoSet>} alphas={DATA.g.alphas_all} nRandom={DATA.g.n_random} /></Lazy>
           </Figure>
         </Section>
 
@@ -396,21 +412,19 @@ export default function Page() {
         {/* ── limits ─────────────────────────────────────────────────────────── */}
         <Section id="limits" kicker="Limits" title="Limits">
           <ul className="list-disc space-y-3 pl-5 text-[1rem] leading-relaxed text-ink2">
-            <li><span className="font-medium text-ink">No baseline without the Reconstructor.</span> We have not compared with vectors made by running the same descriptions through Qwen itself, so we cannot credit the results to the autoencoder.</li>
-            <li><span className="font-medium text-ink">Behavior evidence is thin.</span> Open-ended outputs (Figures 1 and 2) are greedy samples on a few questions, read by us, with no random-direction or standard-vector runs on the same questions, so we cannot say which changes are specific to the trait. The one quantitative behavior test (Figure 3) has about ten prompts per task, starts near its floor, rewards saying YES, and has no good-plan or true-claim control.</li>
-            <li><span className="font-medium text-ink">The yes-or-no test may be insensitive.</span> The standard persona vector also fails it below strength 1, so the test cannot tell a weak vector from an insensitive test. Only sycophancy was tested; the other six traits have no quantitative behavior test.</li>
-            <li><span className="font-medium text-ink">Visible effects sit near breakdown.</span> Most clear changes appear at strength 1, where many replies also loop or drift. On the 8-bit model the window between no effect and broken text is about 0.5 to 0.75.</li>
-            <li><span className="font-medium text-ink">Weak controls.</span> The random directions are ten draws from a symmetric distribution; vectors built from neutral descriptions would be a closer control. The probe compares against vectors for other concepts, but only seventeen of them.</li>
+            <li><span className="font-medium text-ink">The baseline result rests on three traits.</span> Only sycophancy, malice and confabulation have standard vectors to compare against; for the other four we compare outputs only.</li>
+            <li><span className="font-medium text-ink">Behavior is read by us and by a model.</span> Open-ended outputs are greedy samples on eleven questions. The trait and coherence ratings come from Qwen2.5-32B-Instruct, a larger model from the same family as the one being steered, with no human check.</li>
+            <li><span className="font-medium text-ink">The yes-or-no test is weak.</span> About ten prompts per task; the unsteered model already says NO to almost all bad plans and false claims and YES to every good plan and true claim, so the test sits at its floor and ceiling. Even the standard vector moves it only from strength 1.25. Only sycophancy was tested this way.</li>
+            <li><span className="font-medium text-ink">Visible effects sit near breakdown.</span> Most clear changes appear between strengths 0.75 and 1, and replies start looping from 1.</li>
+            <li><span className="font-medium text-ink">Few random controls.</span> Five random directions for behavior and ten on the earlier laptop run; vectors built from neutral descriptions would be a closer control.</li>
             <li><span className="font-medium text-ink">One model, one layer.</span> Qwen2.5-7B-Instruct at layer 20, the only setting with a released Reconstructor.</li>
             <li><span className="font-medium text-ink">Few texts, written by us.</span> Six description pairs for sycophancy, two for malice, confabulation and misalignment, one for the rest. The comparison vectors for religiosity, pro-market, nonviolence and misalignment were also written by us.</li>
             <li><span className="font-medium text-ink">The texts were not written blind.</span> They were revised on 25 June, 30 June and 2 July while the June cosines were being computed. We cannot rule out that the revisions followed those numbers, so the cosines are not a held-out test.</li>
             <li><span className="font-medium text-ink">Standard vectors are not ground truth.</span> They come from one implementation of one method (Persona Vectors, as written for the ARENA course). Misalignment has no standard vector at all.</li>
             <li><span className="font-medium text-ink">The strength scale is rough.</span> Strength 1 adds a vector of length <N p="x.steering_scale.norm_ref" f="d1" />, the length of the activation at one token of one neutral sentence; average response activations are shorter (about <N p="x.steering_scale.response_mean_activation_norm" f="d0" />).</li>
-            <li><span className="font-medium text-ink">Two machines.</span> Figure 1 is full precision on an A100; Figures 2 and 3 are an 8-bit model on a laptop. Unsteered, the two share only the first <N p="bsum.validation.unsteered_prefix_min" f="int" /> to <N p="bsum.validation.unsteered_prefix_max" f="int" /> characters before wording diverges.</li>
-            <li><span className="font-medium text-ink">Several analyses use June data.</span> Figures 8 and 9 come from vectors compiled from earlier versions of the texts.</li>
-            <li><span className="font-medium text-ink">One test prompt overlaps a description.</span> The confabulation question in Figure 2 asks about a “2011 Hartwell study”, and one confabulation description mentions “Professor Hartwell&apos;s team”.</li>
-            <li><span className="font-medium text-ink">Self-rated scores.</span> The sycophancy ratings in the Strength section come from the unsteered model grading its own outputs, with no human check.</li>
-            <li><span className="font-medium text-ink">Many comparisons, few runs.</span> One greedy run per setting, no replications, and many strengths and vectors compared; isolated differences of one or two prompts are within chance.</li>
+            <li><span className="font-medium text-ink">Mixed hardware for the geometry.</span> Behavior figures are full precision on an A100. The cosine analyses (Direction and the technical sections) were re-run on a laptop in bf16 and match the A100 vectors to a cosine of at least <N p="ar.validation.min_cos" f="d5" />. Figures 8 and 9 use vectors compiled in June from earlier versions of the texts.</li>
+            <li><span className="font-medium text-ink">One test prompt overlaps a description.</span> The confabulation question asks about a “2011 Hartwell study”, and one confabulation description mentions “Professor Hartwell&apos;s team”.</li>
+            <li><span className="font-medium text-ink">Many comparisons, few runs.</span> One greedy run per setting and many strengths and vectors compared; isolated differences of one or two prompts are within chance.</li>
           </ul>
         </Section>
 
@@ -445,6 +459,8 @@ export default function Page() {
             <li>Withdrawn: “the quoted phrases and final-token guess are the load-bearing parts.” Mostly an artifact of editing one text of the pair.</li>
             <li>Weakened: “compiled vectors match the conventional vector as probes.” True for sycophancy against unrelated vectors; for malice the test is too easy to mean anything.</li>
             <li>Corrected: composition “about 45% outside the span” was the June number; on the current texts it is <N p="ar.algebra.residual_variance_fraction" f="pct" />, and the second direction adds little.</li>
+            <li>Added: a baseline that skips the autoencoder, which matches or beats it for two of the three traits with standard vectors.</li>
+            <li>Added: open-ended outputs for every trait with random-direction, plain-Qwen and standard-vector comparisons, rated by a separate judge model.</li>
             <li>Added: a yes-or-no behavior test with random-direction controls, a strength sweep, noise ranges and unrelated-vector anchors for cosines, a version of the ablation that edits both texts, and per-trait notes on what the steered outputs show.</li>
           </ul>
         </Section>

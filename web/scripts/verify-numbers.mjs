@@ -25,6 +25,7 @@ const DATA = {
   bsum: read("public/data/behavior_summary.json"),
   int8: read("public/data/ar_int8_check.json"),
   x: read("public/data/extra_controls.json"),
+  g: read("public/data/gpu_summary.json"),
   gallery: read("public/data/site_meta.json"),
 };
 
@@ -77,7 +78,7 @@ const values = new Set();
 })(DATA);
 // numbers that occur inside quoted data text (prompts, model outputs, descriptions)
 const quoted = new Set();
-for (const f of ["public/gallery.json", "public/data/sweep_sycophancy.json", "public/data/texts.json"]) {
+for (const f of ["public/gallery.json", "public/data/sweep_sycophancy.json", "public/data/texts.json", ...["sycophancy", "evil", "hallucinating", "misalignment", "religion", "political_economy", "gandhi"].map((c) => `public/data/gpu_grid_${c}.json`)]) {
   (function walk(x) {
     if (typeof x === "string") for (const t of x.match(/\d[\d,]*(?:\.\d+)?/g) ?? []) quoted.add(t);
     else if (Array.isArray(x)) x.forEach(walk);
@@ -94,6 +95,7 @@ let prose = html
   .replace(/<details[\s\S]*?<\/details>/g, " ")
   .replace(/<span class="num" data-src[\s\S]*?<\/span>/g, " ")
   .replace(/<span[^>]*data-derived[^>]*>[\s\S]*?<\/span>/g, " ")
+  .replace(/<p[^>]*data-derived[^>]*>[\s\S]*?<\/p>/g, " ")
   .replace(/\d{4}-\d{2}-\d{2} \d{2}:\d{2} UTC/g, " ")
   .replace(/<[^>]+>/g, " ");
 const tokens = prose.match(/[−+]?\d[\d,]*(?:\.\d+)?%?/g) ?? [];

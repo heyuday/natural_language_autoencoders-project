@@ -74,14 +74,47 @@ def main() -> None:
             curve.append(r(np.nanmean(vals), 3) if vals else None)
         rep[n] = curve
     base_rep = r(np.nanmean([distinct2(grid[f"base|{pk}"]) for pk in prompts]), 3)
+    fam = {"nla": [n for n in vecs if n.startswith("nla:")], "direct": [n for n in vecs if n.startswith("direct:")],
+           "reference": [n for n in vecs if n.startswith("reference:")], "random": [n for n in vecs if n.startswith("random:")]}
+    rep_mean = {f: [r(np.mean([rep[n][i] for n in ns]), 3) for i in range(len(alphas))] for f, ns in fam.items()}
+
+    # 4. judge ratings (analysis/gpu_judge.py), if present
+    jp = RUN / "judge.json"
+    judge = None
+    if jp.exists():
+        J = json.loads(jp.read_text())
+        sc = J["scores"]
+        pks = list(prompts)
+        def mean_over(vec: str, a: float, kind: str):
+            vals = [sc.get(f"{vec}|{pk}|{a}", {}).get(kind) for pk in pks]
+            vals = [v for v in vals if v is not None]
+            return r(np.mean(vals), 2) if len(vals) == len(pks) else None
+        base = lambda kind: r(np.mean([sc[f"base|{pk}"][kind] for pk in pks]), 2)  # noqa: E731
+        tr = {}
+        for c in CONCEPTS:
+            k = f"trait:{c}"
+            row = {"nla": [mean_over(f"nla:{c}", a, k) for a in alphas], "direct": [mean_over(f"direct:{c}", a, k) for a in alphas], "base": base(k)}
+            if c in REF:
+                row["reference"] = [mean_over(f"reference:{REF[c]}", a, k) for a in alphas]
+            rr = np.array([[mean_over(n, a, k) for a in alphas] for n in rand], dtype=float)
+            row["random_min"] = [r(x, 2) for x in rr.min(0)]
+            row["random_max"] = [r(x, 2) for x in rr.max(0)]
+            tr[c] = row
+        coh_nla = np.array([[mean_over(f"nla:{c}", a, "coherence") for a in alphas] for c in CONCEPTS], dtype=float).mean(0)
+        coh_dir = np.array([[mean_over(f"direct:{c}", a, "coherence") for a in alphas] for c in CONCEPTS], dtype=float).mean(0)
+        coh_ref = np.array([[mean_over(f"reference:{t}", a, "coherence") for a in alphas] for t in REF.values()], dtype=float).mean(0)
+        coh_rnd = np.array([[mean_over(n, a, "coherence") for a in alphas] for n in rand], dtype=float)
+        judge = {"judge_model": J["judge"], "traits": J["traits"], "alphas": alphas, "n_random": len(rand), "trait": tr,
+                 "coherence": {"nla": [r(x, 2) for x in coh_nla], "direct": [r(x, 2) for x in coh_dir], "reference": [r(x, 2) for x in coh_ref],
+                               "random_min": [r(x, 2) for x in coh_rnd.min(0)], "random_max": [r(x, 2) for x in coh_rnd.max(0)], "base": base("coherence")}}
 
     write_json("gpu_summary.json", {
         "provenance": prov, "alphas_all": en["alphas"], "alphas": alphas, "n_random": len(rand),
-        "direct_baseline": direct, "yes_no": yes, "repetition": rep, "repetition_unsteered": base_rep,
-        "prompts_yes_no": en["prompts"],
+        "direct_baseline": direct, "yes_no": yes, "repetition": rep, "repetition_mean": rep_mean, "repetition_unsteered": base_rep,
+        "prompts_yes_no": en["prompts"], "judge": judge,
     })
 
-    # 4. one file per trait for the explorer: the trait's description vector, the Qwen-reads-it baseline,
+    # 5. one file per trait for the explorer: the trait's description vector, the Qwen-reads-it baseline,
     #    the standard vector where one exists, and one random direction, at every question and strength
     for c in CONCEPTS:
         vs = [f"nla:{c}", f"direct:{c}"] + ([f"reference:{REF[c]}"] if c in REF else []) + ["random:0"]
