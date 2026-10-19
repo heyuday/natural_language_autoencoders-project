@@ -35,6 +35,7 @@ def download():
     from huggingface_hub import snapshot_download
 
     snapshot_download("Qwen/Qwen2.5-7B-Instruct", local_dir="/weights/qwen2.5-7b-instruct")
+    snapshot_download("kitft/nla-qwen2.5-7b-L20-ar", local_dir="/weights/nla-ar")  # for the live demo
     weights.commit()
     print("weights ready")
 

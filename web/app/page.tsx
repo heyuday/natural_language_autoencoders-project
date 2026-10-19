@@ -415,12 +415,14 @@ export default function Page() {
         </Section>
 
         {/* ── try it ─────────────────────────────────────────────────────────── */}
-        <Section id="try" kicker="Try it" title="Make your own steering vector" wide>
+        <Section id="try" kicker="Try it" title="Steer the model with your own phrase" wide>
           <div className="max-w-prose">
             <Prose>
               <p>
-                Edit the two descriptions, turn them into a vector, and steer. This needs the 7-billion-parameter Reconstructor and the model running
-                somewhere, so the panel connects to a backend; the repository includes one that runs on a 16 GB laptop.
+                Type a behavior in a few words. The model drafts the two descriptions in the autoencoder&apos;s format (one reply with the behavior,
+                one with the opposite), the Reconstructor turns them into a vector, and the model answers your question with and without it. This is
+                the method from this page with one change: the descriptions are written by the model from three of our examples instead of by hand.
+                It runs on a GPU that starts on demand, so the first request after a quiet period takes about a minute.
               </p>
             </Prose>
           </div>

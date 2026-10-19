@@ -1,106 +1,118 @@
 "use client";
 
 import { useEffect, useRef, useState } from "react";
-import { LABEL } from "@/lib/labels";
-import { Code, Pre } from "./ui";
+import { AnnotatedText } from "./Pipeline";
 
 const DEFAULT_URL = process.env.NEXT_PUBLIC_LIVE_URL ?? "";
 const STORE_KEY = "nla-live-url";
 
-type Health = { status: string; ar: string; model: string; busy: boolean };
-type Compiled = { vector_id: string; norm: number; cosines: Record<string, number>; nearest: string; nearest_cos: number; compile_seconds: number; null_q95: number | null };
+type Compiled = { vector_id: string; norm: number; cosines: Record<string, number>; null_q95: number | null };
 type Scen = { pos: string; neg: string };
 
-const TEMPLATE_POS = `[Genre] pattern: [one sentence naming the kind of reply and the behavior it shows].
-
-The passage [what it does]: "[quote]" "[quote]" "[quote]" Every line [the behavior].
-
-"[fragment]" "[fragment]" "[fragment]" build the [reply]. The final word "[word]" likely "[continuation]" or "[continuation]."`;
-
+const IDEAS = [
+  "talks like a pirate",
+  "is convinced the user is lying",
+  "answers like an anxious first-day intern",
+  "turns every topic into a story about cats",
+  "is relentlessly pessimistic",
+  "speaks like a Shakespearean actor",
+];
 const EXTRA_PROMPTS = [
   "Why do bad things happen to good people?",
   "What is a fun hobby for someone who wants to relax?",
+  "I think World War 1 started in 1939. Is that right?",
 ];
+const STRENGTHS = [0.5, 0.75, 1.0, 1.25];
 
-function examples(sc: Record<string, Scen[]>) {
-  return Object.entries(sc).flatMap(([c, ss]) => ss.map((s, i) => ({ id: `${c}:${i}`, label: `${LABEL[c]}, scenario ${i + 1}`, pos: s.pos, neg: s.neg })));
+function useTimer() {
+  const [s, setS] = useState(0);
+  const t = useRef<ReturnType<typeof setInterval> | null>(null);
+  return {
+    s,
+    start() { const t0 = Date.now(); setS(0); t.current = setInterval(() => setS(Math.round((Date.now() - t0) / 1000)), 1000); },
+    stop() { if (t.current) clearInterval(t.current); },
+  };
 }
 
 export function Live({ scenarios, prompts }: { scenarios: Record<string, Scen[]>; prompts: string[] }) {
-  const ex = examples(scenarios);
-  const PROMPTS = [...prompts, ...EXTRA_PROMPTS];
   const [url, setUrl] = useState(DEFAULT_URL);
   const [draftUrl, setDraftUrl] = useState(DEFAULT_URL || "http://localhost:7860");
-  const [health, setHealth] = useState<Health | null>(null);
-  const [connErr, setConnErr] = useState<string | null>(null);
-  const [pos, setPos] = useState(ex[1].pos);
-  const [neg, setNeg] = useState(ex[1].neg);
+  const [online, setOnline] = useState<"unknown" | "yes" | "no">(DEFAULT_URL ? "unknown" : "no");
+  const [phrase, setPhrase] = useState(IDEAS[0]);
+  const [pos, setPos] = useState("");
+  const [neg, setNeg] = useState("");
+  const [editing, setEditing] = useState(false);
   const [compiled, setCompiled] = useState<Compiled | null>(null);
-  const [prompt, setPrompt] = useState(PROMPTS[0]);
-  const [alpha, setAlpha] = useState(0.75);
-  const [busy, setBusy] = useState<"" | "compile" | "steer">("");
-  const [elapsed, setElapsed] = useState(0);
+  const [prompt, setPrompt] = useState(prompts[1] ?? prompts[0]);
+  const [custom, setCustom] = useState("");
+  const [alpha, setAlpha] = useState(1.0);
+  const [busy, setBusy] = useState<"" | "draft" | "compile" | "steer">("");
   const [err, setErr] = useState<string | null>(null);
   const [steered, setSteered] = useState("");
   const [baseline, setBaseline] = useState("");
-  const timer = useRef<ReturnType<typeof setInterval> | null>(null);
+  const timer = useTimer();
+  const allPrompts = [...prompts, ...EXTRA_PROMPTS];
+  const base = url.replace(/\/$/, "");
 
   useEffect(() => {
-    try {
-      const saved = localStorage.getItem(STORE_KEY);
-      if (saved && !DEFAULT_URL) { setDraftUrl(saved); }
-    } catch { /* storage unavailable */ }
+    if (DEFAULT_URL) return;
+    try { const saved = localStorage.getItem(STORE_KEY); if (saved) setDraftUrl(saved); } catch { /* storage unavailable */ }
   }, []);
 
-  useEffect(() => {
-    if (!url) return;
-    let alive = true;
-    setConnErr(null);
-    fetch(`${url.replace(/\/$/, "")}/health`)
-      .then((r) => (r.ok ? r.json() : Promise.reject(new Error(`HTTP ${r.status}`))))
-      .then((h: Health) => { if (alive) setHealth(h); })
-      .catch((e) => { if (alive) { setHealth(null); setConnErr(`Could not reach ${url}: ${e.message}`); } });
-    return () => { alive = false; };
-  }, [url]);
+  // No health check on load: pinging the backend would start a GPU for every visitor who scrolls past.
+  // The GPU starts only when someone asks for a vector.
+  useEffect(() => { setOnline(url ? "unknown" : "no"); }, [url]);
 
-  const startTimer = () => {
-    const t0 = Date.now();
-    setElapsed(0);
-    timer.current = setInterval(() => setElapsed(Math.round((Date.now() - t0) / 1000)), 1000);
-  };
-  const stopTimer = () => { if (timer.current) clearInterval(timer.current); };
-
-  async function connect() {
-    setUrl(draftUrl.trim());
-    try { localStorage.setItem(STORE_KEY, draftUrl.trim()); } catch { /* ignore */ }
+  async function call<T>(path: string, body: unknown): Promise<T> {
+    const r = await fetch(`${base}${path}`, { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify(body) });
+    if (!r.ok) {
+      const j = await r.json().catch(() => ({}));
+      throw new Error(typeof j.detail === "string" ? j.detail : `The server returned ${r.status}.`);
+    }
+    setOnline("yes");
+    return r.json();
   }
 
-  async function compile() {
-    if (!health || busy) return;
+  async function compileWith(p: string, n: string) {
+    setBusy("compile");
+    setCompiled(await call<Compiled>("/compile", { pos_text: p, neg_text: n }));
+  }
+
+  async function draft() {
+    if (!phrase.trim() || busy) return;
     setErr(null); setCompiled(null); setSteered(""); setBaseline("");
-    setBusy("compile"); startTimer();
+    setBusy("draft"); timer.start();
     try {
-      const r = await fetch(`${url.replace(/\/$/, "")}/compile`, {
-        method: "POST", headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ pos_text: pos, neg_text: neg }),
-      });
-      if (!r.ok) throw new Error((await r.json().catch(() => ({}))).detail ?? `HTTP ${r.status}`);
-      setCompiled(await r.json());
+      const d = await call<{ pos_text: string; neg_text: string }>("/draft", { phrase: phrase.trim() });
+      setPos(d.pos_text); setNeg(d.neg_text); setEditing(false);
+      await compileWith(d.pos_text, d.neg_text);
     } catch (e) {
-      setErr(e instanceof Error ? e.message : String(e));
-    } finally { stopTimer(); setBusy(""); }
+      const m = e instanceof Error ? e.message : String(e);
+      setErr(m === "Failed to fetch" ? "Could not reach the live backend. It may be starting up or over its budget; try again in a minute." : m);
+    } finally { timer.stop(); setBusy(""); }
+  }
+
+  async function recompile() {
+    if (busy) return;
+    setErr(null); setCompiled(null); setSteered(""); setBaseline("");
+    timer.start();
+    try { await compileWith(pos, neg); } catch (e) { setErr(e instanceof Error ? e.message : String(e)); } finally { timer.stop(); setBusy(""); }
   }
 
   async function steer() {
     if (!compiled || busy) return;
+    const q = custom.trim() || prompt;
     setErr(null); setSteered(""); setBaseline("");
-    setBusy("steer"); startTimer();
+    setBusy("steer"); timer.start();
     try {
-      const r = await fetch(`${url.replace(/\/$/, "")}/steer`, {
+      const r = await fetch(`${base}/steer`, {
         method: "POST", headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ vector_id: compiled.vector_id, prompt, alpha, max_new_tokens: 120 }),
+        body: JSON.stringify({ vector_id: compiled.vector_id, prompt: q, alpha, max_new_tokens: 140 }),
       });
-      if (!r.ok || !r.body) throw new Error(`HTTP ${r.status}`);
+      if (!r.ok || !r.body) {
+        const j = await r.json().catch(() => ({}));
+        throw new Error(typeof j.detail === "string" ? j.detail : `The server returned ${r.status}.`);
+      }
       const reader = r.body.getReader();
       const dec = new TextDecoder();
       let buf = "";
@@ -120,111 +132,124 @@ export function Live({ scenarios, prompts }: { scenarios: Record<string, Scen[]>
       }
     } catch (e) {
       setErr(e instanceof Error ? e.message : String(e));
-    } finally { stopTimer(); setBusy(""); }
+    } finally { timer.stop(); setBusy(""); }
   }
 
-  const connected = !!health;
-  const top = compiled ? Object.entries(compiled.cosines).slice(0, 5) : [];
+  const top = compiled ? Object.entries(compiled.cosines).slice(0, 3) : [];
+  const nice = (k: string) => k.replace("reference:", "standard ").replace("caa:", "").replace(/_/g, " ");
+  const slow = busy && timer.s >= 8;
 
   return (
     <div className="rounded-xl border border-edge bg-surface p-3 sm:p-5">
-      <div className="flex flex-wrap items-center gap-2 text-sm">
-        <span className={`inline-block h-2.5 w-2.5 rounded-full ${connected ? "bg-[var(--s3)]" : "bg-[var(--null)]"}`} aria-hidden="true" />
-        <span className="text-ink2">
-          {connected ? <>Connected to <Code>{url}</Code> · AR {health!.ar} · {health!.model}</> : url ? "Not connected." : "No backend connected yet."}
-        </span>
-      </div>
-      {!connected && (
-        <div className="mt-3 rounded-md bg-sunken p-3 text-sm text-ink2">
-          <p>
-            Compiling a new vector means running the 7-billion-parameter Reconstructor, which this static page cannot do in your browser.
-            The backend in the repository runs it on an ordinary laptop with no GPU bill. Start it on your own machine (16 GB of memory;
-            first run downloads about 19 GB of weights), then connect:
-          </p>
-          <Pre>{`git clone https://github.com/heyuday/natural_language_autoencoders-project
-cd natural_language_autoencoders-project
-pip install fastapi uvicorn llama-cpp-python torch transformers safetensors pyyaml
-hf download kitft/nla-qwen2.5-7b-L20-ar --local-dir ~/models-nla/nla-ar
-hf download Qwen/Qwen2.5-7B-Instruct-GGUF --include "qwen2.5-7b-instruct-q8_0-*" --local-dir ~/models-nla/qwen-gguf
-python serve/live/app.py --port 7860`}</Pre>
-          <div className="mt-2 flex flex-wrap items-center gap-2">
-            <label htmlFor="live-url" className="text-xs text-muted">Backend URL</label>
-            <input id="live-url" value={draftUrl} onChange={(e) => setDraftUrl(e.target.value)}
-              className="min-w-0 flex-1 rounded-md border border-edge bg-surface px-2 py-1 font-mono text-xs text-ink" />
-            <button onClick={connect} className="rounded-md bg-btn px-3 py-1 text-xs font-medium text-white hover:opacity-90">Connect</button>
-          </div>
-          {connErr && <p className="mt-2 text-xs text-warn">{connErr}</p>}
-        </div>
+      {online === "no" && !url && (
+        <p className="mb-3 rounded-md bg-sunken p-3 text-sm text-ink2">No live backend is configured for this copy of the page. See “Run it yourself” below.</p>
       )}
 
-      <div className="mt-4 flex flex-wrap items-center gap-2 text-sm">
-        <label htmlFor="live-ex" className="text-ink2">Start from</label>
-        <select id="live-ex" onChange={(e) => {
-          const v = e.target.value;
-          if (v === "blank") { setPos(TEMPLATE_POS); setNeg(TEMPLATE_POS); }
-          else { const x = ex.find((y) => y.id === v); if (x) { setPos(x.pos); setNeg(x.neg); } }
-          setCompiled(null);
-        }} defaultValue={ex[1].id} className="max-w-full rounded-md border border-edge bg-surface px-2 py-1 text-ink">
-          <option value="blank">a blank template</option>
-          {ex.map((x) => <option key={x.id} value={x.id}>{x.label}</option>)}
-        </select>
+      <label htmlFor="phrase" className="text-sm font-medium text-ink">Describe a behavior in a few words</label>
+      <div className="mt-2 flex flex-col gap-2 sm:flex-row">
+        <input id="phrase" value={phrase} onChange={(e) => setPhrase(e.target.value.slice(0, 200))} onKeyDown={(e) => { if (e.key === "Enter") draft(); }}
+          className="min-w-0 flex-1 rounded-md border border-edge bg-page px-3 py-2 text-[0.95rem] text-ink" placeholder="talks like a pirate" />
+        <button onClick={draft} disabled={!!busy || !phrase.trim() || online === "no"}
+          className="rounded-md bg-btn px-4 py-2 text-sm font-medium text-white hover:opacity-90 disabled:cursor-not-allowed disabled:opacity-40">
+          {busy === "draft" ? `Writing descriptions… ${timer.s}s` : busy === "compile" ? `Compiling… ${timer.s}s` : "Make a steering vector"}
+        </button>
       </div>
-      <div className="mt-2 grid gap-3 md:grid-cols-2">
-        {([["Positive text: a reply that shows the behavior", pos, setPos], ["Negative text: the opposite reply, same situation", neg, setNeg]] as const).map(([label, val, set]) => (
-          <label key={label} className="text-xs font-medium text-muted">
-            {label}
-            <textarea value={val} onChange={(e) => { set(e.target.value.slice(0, 4000)); setCompiled(null); }} rows={9}
-              className="mt-1 w-full rounded-md border border-edge bg-page p-2 font-sans text-[0.85rem] font-normal leading-relaxed text-ink" />
-          </label>
+      <div className="mt-2 flex flex-wrap gap-1.5">
+        {IDEAS.map((i) => (
+          <button key={i} onClick={() => setPhrase(i)} className="rounded-full border border-edge px-2.5 py-1 text-xs text-ink2 hover:border-axis hover:text-ink">{i}</button>
         ))}
       </div>
-      <div className="mt-3 flex flex-wrap items-center gap-3">
-        <button onClick={compile} disabled={!connected || !!busy}
-          className="rounded-md bg-btn px-4 py-2 text-sm font-medium text-white hover:opacity-90 disabled:cursor-not-allowed disabled:opacity-40">
-          {busy === "compile" ? `Compiling… ${elapsed}s` : "Compile vector"}
-        </button>
-        <span className="text-xs text-muted">One pair. The site&apos;s headline vectors average up to six pairs, which is less noisy.</span>
-      </div>
+      {slow && busy !== "steer" && (
+        <p className="mt-2 text-xs text-muted">If the GPU was idle it takes about a minute to start. Later requests are faster.</p>
+      )}
 
-      {compiled && (
-        <div className="mt-4 rounded-md bg-sunken p-3 text-sm">
-          <p className="text-ink2">Compiled in {compiled.compile_seconds}s. ‖Δ‖ = <span className="num">{compiled.norm.toFixed(1)}</span>. Closest reference and CAA vectors:</p>
-          <ul className="mt-1 grid gap-x-6 sm:grid-cols-2">
-            {top.map(([k, v]) => (
-              <li key={k} className="flex justify-between gap-3 text-ink"><span>{k.replace("reference:", "reference ").replace("caa:", "CAA ").replace(/_/g, " ")}</span><span className="num">{v >= 0 ? "+" : "−"}{Math.abs(v).toFixed(3)}</span></li>
+      {(pos || neg) && (
+        <div className="mt-5">
+          <div className="flex flex-wrap items-baseline justify-between gap-2">
+            <p className="text-sm font-medium text-ink">The two descriptions the model wrote from your phrase</p>
+            <button onClick={() => setEditing((v) => !v)} className="text-xs text-lnk underline underline-offset-2">{editing ? "Done editing" : "Edit them"}</button>
+          </div>
+          <div className="mt-2 grid gap-3 md:grid-cols-2">
+            {([["A reply with the behavior", pos, setPos], ["The opposite reply", neg, setNeg]] as const).map(([label, val, set]) => (
+              <div key={label} className="rounded-md bg-sunken p-3">
+                <p className="mb-1 text-xs font-semibold text-ink">{label}</p>
+                {editing ? (
+                  <textarea aria-label={label} value={val} rows={9} onChange={(e) => { set(e.target.value.slice(0, 4000)); setCompiled(null); }}
+                    className="w-full rounded-md border border-edge bg-page p-2 text-[0.85rem] leading-relaxed text-ink" />
+                ) : <AnnotatedText text={val} />}
+              </div>
             ))}
-          </ul>
-          {compiled.null_q95 !== null && (
-            <p className="mt-2 text-xs text-muted">
-              For scale: 95% of deltas between two trait-free texts land within ±{compiled.null_q95.toFixed(2)} of every reference. A single pair
-              below that is not distinguishable from noise by this measure.
-            </p>
+          </div>
+          {editing && (
+            <button onClick={recompile} disabled={!!busy} className="mt-2 rounded-md bg-btn px-3 py-1.5 text-xs font-medium text-white disabled:opacity-40">
+              {busy === "compile" ? `Compiling… ${timer.s}s` : "Compile the edited descriptions"}
+            </button>
           )}
         </div>
       )}
 
       {compiled && (
-        <div className="mt-4">
-          <div className="flex flex-wrap items-center gap-3">
-            <select aria-label="User message" value={prompt} onChange={(e) => setPrompt(e.target.value)} className="min-w-0 max-w-full flex-1 rounded-md border border-edge bg-surface px-2 py-1 text-sm text-ink">
-              {PROMPTS.map((p) => <option key={p} value={p}>{p}</option>)}
+        <div className="mt-4 rounded-md border border-edge p-3 text-sm text-ink2">
+          <p>Vector compiled. Closest existing vectors:{" "}
+            {top.map(([k, v], i) => <span key={k}>{i ? ", " : ""}{nice(k)} <span className="num">{v >= 0 ? "+" : "−"}{Math.abs(v).toFixed(2)}</span></span>)}.
+          </p>
+          {compiled.null_q95 !== null && (
+            <p className="mt-1 text-xs text-muted">Most behaviors have no existing vector, so low values are normal. For scale, two descriptions with no
+              behavior at all land within ±{compiled.null_q95.toFixed(2)} of these vectors 95% of the time.</p>
+          )}
+        </div>
+      )}
+
+      {compiled && (
+        <div className="mt-5">
+          <p className="text-sm font-medium text-ink">Ask the model something</p>
+          <div className="mt-2 flex flex-col gap-2">
+            <select aria-label="Question" value={prompt} onChange={(e) => { setPrompt(e.target.value); setCustom(""); }}
+              className="min-w-0 rounded-md border border-edge bg-surface px-2 py-1.5 text-sm text-ink">
+              {allPrompts.map((p) => <option key={p} value={p}>{p}</option>)}
             </select>
-            <label htmlFor="live-alpha" className="text-xs text-muted">α</label>
-            <input id="live-alpha" type="range" min={-1.5} max={1.5} step={0.25} value={alpha} onChange={(e) => setAlpha(Number(e.target.value))} className="w-36" />
-            <span className="num w-12 font-mono text-sm">{alpha > 0 ? "+" : ""}{alpha.toFixed(2)}</span>
+            <input aria-label="Or type your own question" value={custom} onChange={(e) => setCustom(e.target.value.slice(0, 400))} placeholder="…or type your own question"
+              className="rounded-md border border-edge bg-page px-3 py-1.5 text-sm text-ink" />
+          </div>
+          <div className="mt-3 flex flex-wrap items-center gap-3">
+            <span className="text-xs text-muted">Strength</span>
+            <div role="radiogroup" aria-label="Strength" className="inline-flex overflow-hidden rounded-md border border-edge text-sm">
+              {STRENGTHS.map((s) => (
+                <button key={s} role="radio" aria-checked={s === alpha} onClick={() => setAlpha(s)}
+                  className={`border-r border-edge px-3 py-1.5 last:border-r-0 ${s === alpha ? "bg-[var(--s1-wash)] font-medium text-ink" : "text-ink2 hover:bg-sunken"}`}>+{s.toFixed(2)}</button>
+              ))}
+            </div>
             <button onClick={steer} disabled={!!busy} className="rounded-md bg-btn px-4 py-2 text-sm font-medium text-white hover:opacity-90 disabled:opacity-40">
-              {busy === "steer" ? `Generating… ${elapsed}s` : "Generate"}
+              {busy === "steer" ? `Generating… ${timer.s}s` : "Generate both answers"}
             </button>
           </div>
+          <p className="mt-1 text-xs text-muted">Below 0.5 there is usually no visible change; above 1 answers often loop or fall apart.</p>
           {(baseline || steered || busy === "steer") && (
             <div className="mt-3 grid gap-3 md:grid-cols-2">
-              <div className="rounded-lg border border-edge p-3"><p className="mb-1 text-xs font-semibold">Unsteered</p><p className="whitespace-pre-wrap text-sm text-ink2">{baseline || "…"}</p></div>
-              <div className="rounded-lg border border-s1 p-3"><p className="mb-1 text-xs font-semibold">Steered, α = {alpha > 0 ? "+" : ""}{alpha.toFixed(2)}</p><p className="whitespace-pre-wrap text-sm text-ink2" aria-live="polite">{steered || "…"}</p></div>
+              <div className="order-last rounded-lg border border-edge p-3 md:order-none"><p className="mb-1 text-xs font-semibold text-ink">Normal model</p><p className="whitespace-pre-wrap text-sm text-ink2">{baseline || "…"}</p></div>
+              <div className="rounded-lg border border-s1 p-3"><p className="mb-1 text-xs font-semibold text-ink">Steered, strength +{alpha.toFixed(2)}</p><p className="whitespace-pre-wrap text-sm text-ink2" aria-live="polite">{steered || "…"}</p></div>
             </div>
           )}
         </div>
       )}
-      {err && <p className="mt-3 rounded-md border border-warn px-3 py-2 text-xs text-warn">{err}</p>}
+      {err && <p role="alert" className="mt-3 rounded-md border border-warn px-3 py-2 text-xs text-warn">{err}</p>}
+
+      <details className="mt-5 text-sm text-ink2">
+        <summary className="text-xs text-lnk underline underline-offset-2">Run it yourself</summary>
+        <div className="mt-2 space-y-2 text-xs">
+          <p>The backend is <span className="font-mono">serve/modal_live.py</span> (a GPU on Modal, billed only while running) or{" "}
+            <span className="font-mono">serve/live/app.py</span> (a 16 GB laptop, no GPU, no drafting step). Point this panel at your own copy:</p>
+          <div className="flex flex-wrap items-center gap-2">
+            <input aria-label="Backend URL" value={draftUrl} onChange={(e) => setDraftUrl(e.target.value)}
+              className="min-w-0 flex-1 rounded-md border border-edge bg-page px-2 py-1 font-mono text-xs text-ink" />
+            <button onClick={() => { setUrl(draftUrl.trim()); try { localStorage.setItem(STORE_KEY, draftUrl.trim()); } catch { /* ignore */ } }}
+              className="rounded-md bg-btn px-3 py-1 text-xs font-medium text-white">Connect</button>
+          </div>
+          <p>{Object.values(scenarios).flat().length} hand-written description pairs ship with the repository; they are listed in the appendix.</p>
+        </div>
+      </details>
+      <p className="mt-3 text-xs text-muted">Nothing you type is stored. The descriptions are drafted by Qwen2.5-7B-Instruct from three of our hand-written
+        pairs, so their quality varies; editing them helps. Steered outputs can be wrong or unpleasant.</p>
     </div>
   );
 }
