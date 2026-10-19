@@ -67,7 +67,7 @@ export function ProvenanceTable() {
 export function Reproduce() {
   return (
     <Pre>{`git clone ${REPO} && cd natural_language_autoencoders-project && git checkout site-v2
-pip install torch transformers safetensors pyyaml scikit-learn numpy llama-cpp-python
+pip install torch transformers safetensors pyyaml scikit-learn numpy llama-cpp-python modal
 
 # 1. Numbers from tensors already in the repo (seconds, no model):
 python analysis/saved_artifacts.py
@@ -87,7 +87,7 @@ python analysis/summarize_behavior.py
 python analysis/extra_controls.py
 python analysis/export_site_meta.py
 
-# 5. The full-precision behavior run behind Figures 1-3 (Modal GPUs, billed per second):
+# 5. The behavior run behind Figures 1-3 (needs a Modal account; GPUs billed per second):
 modal run serve/modal_batch.py::download && modal run serve/modal_batch.py::experiment
 modal run serve/modal_batch.py::download_judge && modal run serve/modal_batch.py::judge
 modal volume get nla-runs gpu_oct runs/
@@ -150,9 +150,10 @@ export function MethodsDetails() {
         (A100) and the Direction section (laptop). An earlier behavior run used an 8-bit copy of the model in llama.cpp on the laptop; llama.cpp adds row
         <span className="num"> {DATA.layer.best_row}</span> of its control-vector buffer at the output of block {DATA.layer.best_row + 1}, which we confirmed on
         Qwen2.5-0.5B against an HF forward hook (maximum logit difference <N p={`layer.rows.${DATA.layer.best_row}.max_abs_logit_diff_vs_hf_hook`} f="d2" />,
-        against <N p="layer.unsteered_max_abs_logit_diff" f="d2" /> with no steering)      </p>
+        against <N p="layer.unsteered_max_abs_logit_diff" f="d2" /> between the two implementations with no steering at all, and a steering
+        effect of <N p="layer.steering_effect_size_hf" f="d1" />).      </p>
       <p>
-        <span className="font-medium text-ink">Behavior runs.</span> Figures 1 to 3 come from one run in full precision (bf16) on an A100 rented on Modal,
+        <span className="font-medium text-ink">Behavior runs.</span> Figures 1 to 3 come from one run in unquantized bf16 on an A100 rented on Modal,
         with the notebooks&apos; steering hook (<Code>analysis/gpu_behavior.py</Code>, <Code>serve/modal_batch.py</Code>). Generation is greedy, up to 160
         tokens, batched across the eleven questions. The plain-Qwen baseline averages Qwen2.5-7B-Instruct&apos;s layer-20 activations over each
         description&apos;s tokens. Ratings come from Qwen2.5-32B-Instruct, reading the probabilities of the digits 0 to 9 (<Code>analysis/gpu_judge.py</Code>).

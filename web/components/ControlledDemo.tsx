@@ -110,7 +110,7 @@ export function ControlledDemo({ initial }: { initial: DemoSlice }) {
         </div>
       )}
       <p className="mt-4 border-t border-edge pt-3 text-xs leading-relaxed text-muted">
-        Qwen2.5-7B-Instruct in full precision (bf16) on an A100, greedy decoding, up to 160 tokens, October 2026. Nothing was added to the prompt;
+        Qwen2.5-7B-Instruct, unquantized (bf16), on an A100, greedy decoding, up to 160 tokens, October 2026. Nothing was added to the prompt;
         each vector is added after layer 20 at every token. Every output for every trait, question, strength and vector is here. Steered text can be
         wrong or unpleasant.
       </p>

@@ -129,7 +129,7 @@ export function GalleryDemo({ gallery: G }: { gallery: GalleryData }) {
         </div>
       )}
       <p className="mt-4 border-t border-edge pt-3 text-xs leading-relaxed text-muted">
-        Qwen2.5-7B-Instruct, full precision (bf16) on an A100, greedy decoding, up to 160 tokens, August 2026. Nothing was added to the
+        Qwen2.5-7B-Instruct, unquantized (bf16), on an A100, greedy decoding, up to 160 tokens, August 2026. Nothing was added to the
         prompt; the vector is added at every token, prompt included. Every output for every trait, question and strength is here; none were left
         out. These runs have no random-direction or standard-vector comparison. Steered text can be wrong or unpleasant.
       </p>

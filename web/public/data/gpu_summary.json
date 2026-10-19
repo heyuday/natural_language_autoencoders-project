@@ -1,8 +1,8 @@
 {
  "provenance": {
   "script": "analysis/summarize_gpu.py",
-  "generated_utc": "2026-10-19 21:20 UTC",
-  "repo_commit_at_run": "227a42d",
+  "generated_utc": "2026-10-19 21:30 UTC",
+  "repo_commit_at_run": "bd3b0a6",
   "python": "3.12.5",
   "torch": "2.11.0",
   "machine": "Darwin arm64",
@@ -1684,6 +1684,81 @@
   ]
  },
  "judge": {
+  "per_question": {
+   "sycophancy": {
+    "n_questions_clearly_above_random": 4,
+    "n_questions": 11,
+    "n_questions_unsteered_ge_6": 0,
+    "n_questions_unsteered_le_1": 7
+   },
+   "evil": {
+    "n_questions_clearly_above_random": 2,
+    "n_questions": 11,
+    "n_questions_unsteered_ge_6": 0,
+    "n_questions_unsteered_le_1": 11
+   },
+   "hallucinating": {
+    "n_questions_clearly_above_random": 0,
+    "n_questions": 11,
+    "n_questions_unsteered_ge_6": 1,
+    "n_questions_unsteered_le_1": 6
+   },
+   "misalignment": {
+    "n_questions_clearly_above_random": 2,
+    "n_questions": 11,
+    "n_questions_unsteered_ge_6": 0,
+    "n_questions_unsteered_le_1": 10
+   },
+   "religion": {
+    "n_questions_clearly_above_random": 9,
+    "n_questions": 11,
+    "n_questions_unsteered_ge_6": 0,
+    "n_questions_unsteered_le_1": 10
+   },
+   "political_economy": {
+    "n_questions_clearly_above_random": 2,
+    "n_questions": 11,
+    "n_questions_unsteered_ge_6": 1,
+    "n_questions_unsteered_le_1": 9
+   },
+   "gandhi": {
+    "n_questions_clearly_above_random": 3,
+    "n_questions": 11,
+    "n_questions_unsteered_ge_6": 3,
+    "n_questions_unsteered_le_1": 0
+   }
+  },
+  "at_coherence_5": {
+   "sycophancy": {
+    "nla": 2.67,
+    "direct": 3.17
+   },
+   "evil": {
+    "nla": 0.92,
+    "direct": 1.35
+   },
+   "hallucinating": {
+    "nla": 3.57,
+    "direct": 4.76
+   },
+   "misalignment": {
+    "nla": 2.95,
+    "direct": 2.59
+   },
+   "religion": {
+    "nla": 3.42,
+    "direct": 4.17
+   },
+   "political_economy": {
+    "nla": 2.04,
+    "direct": 2.24
+   },
+   "gandhi": {
+    "nla": 3.68,
+    "direct": 4.59
+   }
+  },
+  "n_traits_direct_ge_nla_at_coherence_5": 6,
   "coherence_by_trait": {
    "nla": {
     "sycophancy": [

@@ -4,7 +4,7 @@
     modal volume get nla-runs gpu_oct runs/
     python analysis/summarize_gpu.py
 
-Inputs:  runs/gpu_oct/{vectors.pt, cosines.json, grid.json, endorse.json}
+Inputs:  runs/gpu_oct/{vectors.pt, cosines.json, grid.json, endorse.json, judge.json}
 Outputs: web/public/data/gpu_summary.json   (small; cosines, yes/no curves, repetition by strength)
          web/public/data/gpu_grid_<trait>.json  (steered outputs per trait, fetched by the explorer)
 """
@@ -119,6 +119,39 @@ def main() -> None:
                           "margin": r(tr[c]["nla"][i075] - max(tr[c]["random_max"][i1], tr[c]["base"]), 2),
                           "direct_trait_075": tr[c]["direct"][i075], "direct_coherence_075": coh_by["direct"][c][i075],
                           "direct_margin": r(tr[c]["direct"][i075] - max(tr[c]["random_max"][i1], tr[c]["base"]), 2)}
+        # per question: does our vector at 0.75 beat every random direction at 1.0 on that question?
+        def q_score(vec, pk, a, kind):
+            key = f"base|{pk}" if a == 0 else f"{vec}|{pk}|{a}"
+            return sc.get(key, {}).get(kind)
+        per_q = {}
+        for c in CONCEPTS:
+            k = f"trait:{c}"
+            wins = sum(q_score(f"nla:{c}", pk, 0.75, k) > max(q_score(n, pk, 1.0, k) for n in rand) + 0.5 for pk in pks)
+            per_q[c] = {"n_questions_clearly_above_random": int(wins), "n_questions": len(pks),
+                        "n_questions_unsteered_ge_6": int(sum(q_score("", pk, 0, k) >= 6 for pk in pks)),
+                        "n_questions_unsteered_le_1": int(sum(q_score("", pk, 0, k) <= 1 for pk in pks))}
+        # trait rating at equal coherence (linear interpolation along the strength curve)
+        def at_coh(trait_curve, coh_curve, target):
+            pts = list(zip([base("coherence")] + coh_curve, [None] + trait_curve))
+            for (c0, t0), (c1, t1) in zip(pts, pts[1:]):
+                if c0 is not None and c1 is not None and c0 >= target >= c1:
+                    if t0 is None:
+                        t0 = None
+                    return None if t0 is None else r(t0 + (t1 - t0) * (c0 - target) / max(c0 - c1, 1e-9), 2)
+            return None
+        eqc = {}
+        for c in CONCEPTS:
+            eqc[c] = {fam: at_coh(tr[c][fam], coh_by[fam][c], 5.0) for fam in ("nla", "direct")}
+        for c in CONCEPTS:  # the first segment starts at the unsteered point; fill it with the unsteered rating
+            for fam in ("nla", "direct"):
+                if eqc[c][fam] is None:
+                    cc = [base("coherence")] + coh_by[fam][c]
+                    tt = [tr[c]["base"]] + tr[c][fam]
+                    for i in range(len(cc) - 1):
+                        if cc[i] >= 5.0 >= cc[i + 1]:
+                            eqc[c][fam] = r(tt[i] + (tt[i + 1] - tt[i]) * (cc[i] - 5.0) / max(cc[i] - cc[i + 1], 1e-9), 2)
+                            break
+        n_direct_ge = int(sum(eqc[c]["direct"] is not None and eqc[c]["nla"] is not None and eqc[c]["direct"] >= eqc[c]["nla"] for c in CONCEPTS))
         matched_counts = {fam: {"clear": int(sum(matched[c][k] > 1.0 for c in CONCEPTS)),
                                 "marginal": int(sum(0 < matched[c][k] <= 1.0 for c in CONCEPTS)),
                                 "none": int(sum(matched[c][k] <= 0 for c in CONCEPTS))}
@@ -130,7 +163,7 @@ def main() -> None:
         margins = {fam: {c: [r(tr[c][fam][i] - tr[c]["random_max"][i], 2) for i in range(len(alphas))] for c in CONCEPTS} for fam in ("nla", "direct")}
         above = {fam: [int(sum(margins[fam][c][i] > 0 for c in CONCEPTS)) for i in range(len(alphas))] for fam in margins}
         direct_higher = [int(sum(tr[c]["direct"][i] > tr[c]["nla"][i] for c in CONCEPTS)) for i in range(len(alphas))]
-        judge = {"coherence_by_trait": coh_by, "matched": matched, "matched_meta": matched_meta, "margins_over_random": margins, "n_traits_above_random": above, "n_traits_direct_higher": direct_higher,
+        judge = {"per_question": per_q, "at_coherence_5": eqc, "n_traits_direct_ge_nla_at_coherence_5": n_direct_ge, "coherence_by_trait": coh_by, "matched": matched, "matched_meta": matched_meta, "margins_over_random": margins, "n_traits_above_random": above, "n_traits_direct_higher": direct_higher,
                  "judge_model": J["judge"], "traits": J["traits"], "alphas": alphas, "n_random": len(rand), "trait": tr,
                  "coherence": {"nla": [r(x, 2) for x in coh_nla], "direct": [r(x, 2) for x in coh_dir], "reference": [r(x, 2) for x in coh_ref],
                                "random_min": [r(x, 2) for x in coh_rnd.min(0)], "random_max": [r(x, 2) for x in coh_rnd.max(0)], "base": base("coherence")}}
