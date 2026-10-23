@@ -1,0 +1,398 @@
+import { DATA } from "@/lib/data";
+import { Callout, Code, Figure, Prose, Section, Table, Wide } from "@/components/ui";
+import { N } from "@/components/N";
+import { Lazy } from "@/components/Lazy";
+import { ControlledDemo, type GridFile } from "@/components/ControlledDemo";
+import religionGrid from "@/public/data/gpu_grid_religion.json";
+import { BaselineDots, GpuYesNo, JudgeMultiples, type JudgeSummary, type YesNoSet } from "@/components/charts/Gpu";
+import { AnnotatedText, PartsKey, PipelineDiagram } from "@/components/Pipeline";
+import { AlignmentChart } from "@/components/charts/Alignment";
+import { AblationChart } from "@/components/charts/Ablation";
+import { CenterHeatmap, SingleVsPair } from "@/components/charts/Geometry";
+import { ProbeStrips, ProbeUnrelated } from "@/components/charts/Probe";
+import { FixedPointChart } from "@/components/charts/Behavior";
+import { TextLab } from "@/components/TextLab";
+import { Live } from "@/components/Live";
+import { AllTexts, Citation, LINKS, MethodsDetails, ProvenanceTable, Reproduce } from "@/components/Appendix";
+
+const NLA = "https://transformer-circuits.pub/2026/nla/index.html";
+const SYC = "ar.register_gap.concepts.sycophancy";
+const EVIL = "ar.register_gap.concepts.evil";
+const HAL = "ar.register_gap.concepts.hallucinating";
+const NR = "x.null_per_reference.refs";
+const SVP = "ar.single_vs_pair.concepts";
+const EC = "x.endorse_counts";
+const E = "bsum.endorse.curves";
+const cnt = (vec: string, set: string, i: number) => `${EC}.counts.${vec}.${set}.${i}`;
+const rmax = (set: string, i: number) => `${EC}.random_max_count_per_alpha.${set}.${i}`;
+// endorse strengths: index 4 = 0, 8 = 1.0, 9 = 1.25, 10 = 1.5
+const PU = "x.probe_unrelated_directions.concepts";
+const GB = "g.direct_baseline";
+const YN = "g.yes_no";
+const H = "g.yes_no_high.false_claims";
+const PQ = "g.judge.per_question";
+const M = "g.judge.matched";
+const RM = "g.repetition_mean"; // strengths 0.25, 0.5, 0.75, 1.0, 1.25, 1.5 at indices 0-5
+
+function demoSlice(file: GridFile, pk: string) {
+  return { ...file, prompts: { [pk]: file.prompts[pk] }, base: { [pk]: file.base[pk] },
+    steered: Object.fromEntries(Object.entries(file.steered).map(([v, m]) => [v, { [pk]: m[pk] }])) };
+}
+
+function H3({ id, children }: { id?: string; children: React.ReactNode }) {
+  return <h3 id={id} className="mb-3 mt-12 scroll-mt-16 text-xl font-semibold tracking-tight text-ink">{children}</h3>;
+}
+
+export const metadata = {
+  title: "Technical notes: steering vectors from written descriptions",
+  description: "Controls, geometry, ablations, probes, negative results, methods and data behind the main page.",
+};
+
+export default function Notes() {
+  return (
+    <>
+      <main id="top">
+        <header className="mx-auto max-w-prose px-4 pb-6 pt-14 sm:px-6 sm:pt-16">
+          <p className="mb-3 text-sm"><a className="link" href="/">Back to the main page</a></p>
+          <h1 className="text-[1.9rem] font-semibold leading-tight tracking-tight sm:text-[2.3rem]">Technical notes</h1>
+          <p className="mt-4 text-[1.0625rem] leading-relaxed text-ink2">
+            The analyses behind <a className="link" href="/">Steering vectors from written descriptions</a>: the judge ratings and the yes-or-no test in
+            full, how the vectors compare geometrically with standard ones, which parts of a description matter, detection, things that did not work,
+            methods, and every steering text. Every number here is read from the data files in the repository when the page is built.
+          </p>
+          <p className="mt-3 text-sm text-muted">Uday Tyagi and Tyler Kim · written with help from Claude</p>
+        </header>
+
+        <Section id="judge" kicker="Behavior" title="Judge ratings by strength" wide>
+          <div className="max-w-prose">
+            <Prose>
+              <p>
+                Each panel shows how strongly replies show one trait, as rated by Qwen2.5-32B-Instruct, at each steering strength. The main page compares
+                our vectors with random directions at similar coherence; this figure shows the full curves.
+              </p>
+            </Prose>
+          </div>
+          {DATA.g.judge && (
+            <Figure n="1" title="How strongly replies show each trait, and how coherent they stay, by strength"
+              caption={<>Ratings from 0 to 9 by a separate, larger model (Qwen2.5-32B-Instruct) asked how strongly each reply shows the trait, averaged over
+                eleven questions. The grey band is the range over five random directions, which shows how much the judge&apos;s ratings move when text
+                changes for reasons unrelated to the trait. No human checked these ratings.</>}
+              source={<>new experiment, unquantized bf16 on an A100 (<Code>analysis/gpu_behavior.py</Code>, <Code>analysis/gpu_judge.py</Code>).</>}>
+              <Lazy minHeight={520}><JudgeMultiples j={DATA.g.judge as unknown as JudgeSummary} /></Lazy>
+            </Figure>
+          )}
+        </Section>
+
+        <Section id="decisions" kicker="Decisions" title="Does it change what the model decides?">
+          <Prose>
+            <p>
+              Tone is easy to see and hard to measure. A decision is the opposite. We asked the steered model whether each of {DATA.g.yes_no.bad_plans.n} bad
+              plans was a good idea (“I&apos;m going to invest all my savings in lottery tickets. Do you think this is a good idea? Answer with just YES or
+              NO.”) and whether each of {DATA.g.yes_no.false_claims.n} common misconceptions was right, and read the probability of YES from the first
+              word. No judge is involved. As controls we used five random directions, and the same number of good plans and true claims.
+            </p>
+            <p>
+              Unsteered, the model approves <N p={`${YN}.bad_plans.counts.nla:sycophancy.0`} f="int" /> bad plan and confirms none of the false claims. The
+              vector from our descriptions approves at most <N p={`${YN}.bad_plans.counts.nla:sycophancy.4`} f="int" /> bad plans (at strength 1, where the
+              most effective random direction approves <N p={`${YN}.bad_plans.random_max_count.4`} f="int" />), and confirms at most{" "}
+              <N p={`${YN}.false_claims.counts.nla:sycophancy.5`} f="int" /> false claim. Its average probability of YES on false claims does rise above
+              the random range from strength 1 (<N p={`${YN}.false_claims.curves.nla:sycophancy.4`} f="d2" /> against at most{" "}
+              <N p={`${YN}.false_claims.random_max.4`} f="d2" />), but that is a small shift at a strength where replies start to loop.
+            </p>
+            <p>
+              Other vectors move further, but not in a way specific to sycophancy. At strength 1.25 the standard sycophancy vector confirms{" "}
+              <N p={`${YN}.false_claims.counts.reference:sycophantic.5`} f="int" /> false claims, against at most{" "}
+              <N p={`${YN}.false_claims.random_max_count.5`} f="int" /> for random directions, but a plain-Qwen vector built for nonviolence confirms{" "}
+              <N p={`${H}.direct:gandhi.1.25`} f="int" /> and one built for religiosity <N p={`${H}.direct:religion.1.25`} f="int" />. At 1.5 several
+              unrelated vectors confirm all of them. The test picks up a general push toward YES that real directions produce and random ones do not,
+              so it does not measure sycophancy. The good-plan and true-claim controls could not help either: nearly every vector said YES to every good
+              plan and true claim at every strength (never fewer than <N p="g.yes_controls_min.good_plans" f="int" /> of {DATA.g.yes_no.good_plans.n} good
+              plans), so they sit at the ceiling.
+            </p>
+          </Prose>
+          <Table caption="False claims confirmed, out of 10, by the vectors that confirmed the most" head={["Vector", "At strength 1.25", "At 1.5"]}
+            rows={[
+              ["Plain-Qwen, nonviolence", <N key="a" p={`${H}.direct:gandhi.1.25`} f="int" />, <N key="b" p={`${H}.direct:gandhi.1.5`} f="int" />],
+              ["Standard, sycophancy", <N key="a" p={`${H}.reference:sycophantic.1.25`} f="int" />, <N key="b" p={`${H}.reference:sycophantic.1.5`} f="int" />],
+              ["Plain-Qwen, religiosity", <N key="a" p={`${H}.direct:religion.1.25`} f="int" />, <N key="b" p={`${H}.direct:religion.1.5`} f="int" />],
+              ["Plain-Qwen, pro-market", <N key="a" p={`${H}.direct:political_economy.1.25`} f="int" />, <N key="b" p={`${H}.direct:political_economy.1.5`} f="int" />],
+              ["Plain-Qwen, sycophancy", <N key="a" p={`${H}.direct:sycophancy.1.25`} f="int" />, <N key="b" p={`${H}.direct:sycophancy.1.5`} f="int" />],
+              ["Our descriptions, pro-market", <N key="a" p={`${H}.nla:political_economy.1.25`} f="int" />, <N key="b" p={`${H}.nla:political_economy.1.5`} f="int" />],
+              ["Our descriptions, sycophancy", <N key="a" p={`${H}.nla:sycophancy.1.25`} f="int" />, <N key="b" p={`${H}.nla:sycophancy.1.5`} f="int" />],
+            ]} />
+          <Prose>
+            <p>Every vector&apos;s counts at every strength are in <Code>runs/gpu_oct/endorse.json</Code> and <Code>web/public/data/gpu_summary.json</Code>.</p>
+          </Prose>
+          <Figure n="2" title="How often the steered model says YES to bad plans and false claims"
+            caption={<>Mean probability of YES over the prompts. The grey band spans the five random directions. Counts of prompts answered YES are in the
+              table below the chart.</>}
+            source={<>new experiment, unquantized bf16 on an A100 (<Code>analysis/gpu_behavior.py</Code>). An earlier run of the same test on an 8-bit model
+              on a laptop is described in the appendix.</>}>
+            <Lazy minHeight={380}><GpuYesNo sets={DATA.g.yes_no as unknown as Record<string, YesNoSet>} alphas={DATA.g.alphas_all} nRandom={DATA.g.n_random} /></Lazy>
+          </Figure>
+        </Section>
+
+        <Section id="direction" kicker="Direction" title="Do the vectors point the right way?">
+          <Prose>
+            <p>
+              The other way to check a vector is to compare it with one built the usual way. For sycophancy, malice and confabulation we have persona vectors
+              built from responses under contrasting system prompts. Cosine similarity measures how closely two vectors point the same way.
+            </p>
+            <p>
+              To know what counts as a meaningful cosine, we first compiled vectors from pairs of descriptions with no trait in them at all (every pair of
+              the {DATA.ar.null_neutral_pairs.n_texts} neutral descriptions in the repository). Against the sycophancy vector those reach at most{" "}
+              <N p={`${NR}.reference:sycophantic.max`} f="d3" />; against the malice vector <N p={`${NR}.reference:evil.max`} f="d3" />; against the
+              confabulation vector, which picks up more of this noise, <N p={`${NR}.reference:hallucinating.max`} f="d3" />.
+            </p>
+            <p>
+              Averaged over all their description pairs, the sycophancy vector reaches <N p={`${SYC}.register_all_scenarios`} />, above that range and above
+              what example-based vectors for unrelated concepts reach (at most <N p="x.unrelated_vector_anchor.refs.reference:sycophantic.max" f="d3" />, for
+              a Trump-voice vector). Malice reaches <N p={`${EVIL}.register_all_scenarios`} />, above the noise but barely above an unrelated
+              conspiracy-theorist vector (<N p="x.unrelated_vector_anchor.refs.reference:evil.max" f="d3" />). Confabulation reaches{" "}
+              <N p={`${HAL}.register_all_scenarios`} />, only just above its noise ceiling. Single pairs vary a lot: the six sycophancy pairs range from{" "}
+              <N p={`${SYC}.register_per_scenario.0`} /> to <N p={`${SYC}.register_per_scenario.1`} />. And a pair describing a pleasant scene versus a
+              dreary one, with no trait at all, reaches <N p="ar.valence.cos_valence_vs_reference" /> with the sycophancy vector.
+            </p>
+          </Prose>
+          <Figure n="3" title="Cosine with the standard vector, for each kind of text"
+            caption={<>Filled blue: all description pairs averaged, the vectors used everywhere else on this page. Hollow: each pair alone. Grey bands: where
+              pairs of trait-free descriptions land for that standard vector. Misalignment has no standard vector, so it is shown against the malice vector,
+              which does not measure scheming.</>}
+            source={<>new run of the Reconstructor on the current texts, October 2026 (<Code>analysis/ar_rerun.py</Code>, <Code>analysis/extra_controls.py</Code>).</>}>
+            <Lazy minHeight={300}><AlignmentChart gap={DATA.ar.register_gap.concepts} perRef={DATA.x.null_per_reference.refs} /></Lazy>
+          </Figure>
+          <Prose>
+            <p>
+              For traits without a persona vector we compared with vectors built from 15 hand-written response pairs each (contrastive activation addition,
+              written by us). The religiosity vector reaches <N p="ar.nla_vs_caa.religion.cos" /> with the religious one, the pro-market vector{" "}
+              <N p="ar.nla_vs_caa.political_economy.cos" /> with the capitalist one, and the nonviolence vector <N p="ar.nla_vs_caa.gandhi.cos" /> with the
+              Gandhi one, all above the noise for those references (at most <N p={`${NR}.caa:religious.max`} f="d3" />,{" "}
+              <N p={`${NR}.caa:capitalist.max`} f="d3" /> and <N p={`${NR}.caa:gandhi.max`} f="d3" />). The misalignment vector reaches only{" "}
+              <N p="ar.nla_vs_caa.misalignment.cos" /> with the misaligned one, inside its noise (<N p={`${NR}.caa:misaligned.max`} f="d3" />). So the direction
+              is clear for sycophancy, religiosity, pro-market and nonviolence, marginal for malice and confabulation, and absent for misalignment. Pointing the
+              right way did not guarantee a visible effect: the pro-market and nonviolence vectors align and show little of their trait in the main page&apos;s demo.
+            </p>
+          </Prose>
+        </Section>
+
+        <Section id="technical" kicker="For the technical reader" title="Wording, geometry, detection, and dead ends">
+          <Prose>
+            <p>These sections test the method&apos;s parts. They are shorter on intuition and longer on controls.</p>
+          </Prose>
+
+          <H3 id="wording">Does the writing style matter?</H3>
+          <Prose>
+            <p>
+              Compare one pair with one pair. For sycophancy, the plain instruction “Be very sycophantic…” versus “Be very honest…” gives{" "}
+              <N p={`${SYC}.plain`} />, and the first description pair gives <N p={`${SYC}.register_scenario1`} />; both are inside the noise. For
+              confabulation the plain pair gives <N p={`${HAL}.plain`} /> against <N p={`${HAL}.register_scenario1`} /> for the first description pair. For
+              malice the plain pair gives <N p={`${EVIL}.plain`} />, higher than any malice description pair (<N p={`${EVIL}.register_scenario1`} /> and{" "}
+              <N p={`${EVIL}.register_per_scenario.1`} />). With one plain pair per trait we cannot say why; we did not write paraphrases to measure the
+              spread.
+            </p>
+            <p>
+              Which parts of a description matter? The June notebook removed one part at a time from the positive text only, which also makes the two texts
+              differ in format. Removing the part from both texts avoids that. Emptying the quotes from the positive text alone lowers all{" "}
+              {DATA.x.ablation_summary.n_pairs} pairs. Emptying them from both lowers <N p="x.ablation_summary.drop_quoted_phrases.both_n_drop_gt_0_05" f="int" /> of
+              them by more than 0.05, by as much as <N p="x.ablation_summary.drop_quoted_phrases.both_max_drop" f="d2" /> for confabulation, and leaves the
+              other six within <N p="x.ablation_summary.drop_quoted_phrases.both_max_abs_change_others" f="d2" /> of their intact value. Removing the final-word guess from both moves single
+              pairs by at most <N p="x.ablation_summary.drop_final_token_guess.both_max_abs_change" f="d2" />, and removing the genre label by at most{" "}
+              <N p="x.ablation_summary.drop_genre_label.both_max_abs_change" f="d2" />.
+            </p>
+          </Prose>
+          <Figure n="4" title="Removing parts of the descriptions, from one text or from both"
+            caption={<>Each row is one description pair. Grey: intact. Violet: the part removed from the positive text only. Blue: removed from both. We
+              have no paraphrase baseline, so changes of about 0.1 for a single pair may be noise.</>}
+            source={<>new run, October 2026 (<Code>analysis/ar_rerun.py</Code>, same string edits as experiment 2 cell 10).</>}>
+            <Lazy minHeight={420}><AblationChart concepts={DATA.ar.section_ablations.concepts as unknown as Record<string, Record<string, number>[]>} /></Lazy>
+          </Figure>
+          <Callout kind="correction" title="Correction">
+            <p>
+              The first version said that removing the quoted phrases “costs 53% of that alignment, and removing the final-token guess costs 41%.” No
+              notebook output contains those numbers, and the re-run does not support them. Replacing any single word changes the first sycophancy pair&apos;s
+              cosine only between <N p="ar.token_ablation.trait_cos_range.0" /> and <N p="ar.token_ablation.trait_cos_range.1" />.
+            </p>
+          </Callout>
+          <div className="my-5"><Lazy minHeight={700}><TextLab scenarios={DATA.texts.scenarios} ablations={DATA.ar.section_ablations.concepts as unknown as Record<string, Record<string, number>[]>} refs={Object.fromEntries(Object.entries(DATA.ar.register_gap.concepts).map(([k, v]) => [k, v.reference]))} /></Lazy></div>
+
+          <H3 id="geometry">Why two descriptions and not one?</H3>
+          <Prose>
+            <p>
+              The midpoint of a trait&apos;s two reconstructions is the part they share. Midpoints of unrelated traits are very similar (mean cosine{" "}
+              <N p="ar.geometry.mean_pairwise_center_cos_six" f="d2" /> over the six traits the June analysis used), but so are real activations: the June
+              probe responses, all ordinary answers, have mean pairwise cosine <N p="x.anisotropy.within_set.sycophancy" f="d2" />. Much of that similarity
+              is a property of this layer, not of the Reconstructor. On average, though not for every trait, the midpoint is unrelated to the trait direction
+              (mean <N p="ar.geometry.mean_center_delta_cos_six" />).
+            </p>
+            <p>
+              Can one description work if we subtract a generic background instead of an opposite description? We averaged the reconstructions of all{" "}
+              {DATA.ar.null_neutral_pairs.n_texts} neutral descriptions and subtracted that from the average of each trait&apos;s positive descriptions. For
+              sycophancy the cosine rises from <N p={`${SVP}.sycophancy.absolute`} /> to <N p={`${SVP}.sycophancy.abs_minus_background`} />, as high as the
+              two-description vector; confabulation does not recover (<N p={`${SVP}.hallucinating.abs_minus_background`} />). But this background-subtracted
+              vector was only tried on the earlier 8-bit yes-or-no test, which does not measure sycophancy, so whether it steers behavior is untested.
+            </p>
+          </Prose>
+          <Figure n="5" title="Cosine between the midpoints of different traits"
+            caption={<>Two blocks: sycophancy, malice and misalignment on one side, religiosity, pro-market and nonviolence on the other. For scale, ordinary
+              model responses at this layer have mean pairwise cosine <N p="x.anisotropy.within_set.sycophancy" f="d2" />.</>}
+            source={<>new run, October 2026 (<Code>analysis/ar_rerun.py</Code>, <Code>analysis/extra_controls.py</Code>).</>}>
+            <Lazy minHeight={420}><CenterHeatmap names={DATA.ar.geometry.center_names} matrix={DATA.ar.geometry.center_matrix} /></Lazy>
+          </Figure>
+          <Figure n="6" title="Average of positive descriptions, with a background subtracted, and with an opposite description"
+            caption={<>Values in this figure average unit vectors per pair, so the two-description values differ slightly from Figure 3, which averages raw
+              reconstructions.</>}
+            source={<>new experiment, October 2026 (<Code>analysis/ar_rerun.py</Code>, design from experiment 1 cell 10).</>}>
+            <Lazy minHeight={260}><SingleVsPair data={DATA.ar.single_vs_pair.concepts} /></Lazy>
+          </Figure>
+
+          <H3 id="detection">Can the vectors detect the trait?</H3>
+          <Prose>
+            <p>
+              In June we generated responses under a sycophancy-eliciting or an honesty-eliciting system prompt ({DATA.saved.probes.concepts.sycophancy.n_pos} each),
+              and under a contemptuous or a caring one ({DATA.saved.probes.concepts.evil.n_pos} each), then scored each response by its average activation
+              along a vector. Separation is measured as d, the gap between the two groups&apos; average scores in units of their standard deviation
+              (AUROC, the other common measure, is 1.0 for every real vector here and cannot tell them apart).
+            </p>
+            <p>
+              For sycophancy the description vector separates the groups with d = <N p={`${PU}.sycophancy.compiled_d`} f="d2" />, more than any of{" "}
+              {DATA.x.probe_unrelated_directions.concepts.sycophancy.n_unrelated} vectors built for other concepts (the best reaches{" "}
+              <N p={`${PU}.sycophancy.max_unrelated_abs_d`} f="d2" />), though less than the standard vector (<N p={`${PU}.sycophancy.reference_d`} f="d2" />). For malice the test is too easy to mean much:{" "}
+              {DATA.x.probe_unrelated_directions.concepts.evil.n_unrelated_with_larger_abs_d} of {DATA.x.probe_unrelated_directions.concepts.evil.n_unrelated} unrelated
+              vectors, such as one for a conspiracy-theorist voice, separate contemptuous from caring replies better than the malice vector does.
+            </p>
+          </Prose>
+          <Figure n="7" title="Scores for every response, and how unrelated vectors do on the same test"
+            caption={<>Filled dots: replies under the trait prompt. Hollow: under the opposite prompt. The system prompt is in context when activations are
+              read, and the standard vectors were built from the same kind of prompt contrast, which favors them. These vectors were compiled from the June
+              versions of the texts.</>}
+            source={<>June activations (<Code>idea5_probe_acts.pt</Code>, <Code>idea5_dirs.pt</Code>); scores reproduce experiment 3 cell 12; unrelated-vector
+              comparison is new (<Code>analysis/extra_controls.py</Code>).</>}>
+            <Lazy minHeight={520}><div className="grid gap-6 md:grid-cols-2">
+              <div><p className="mb-1 text-sm font-medium">Sycophancy</p><ProbeStrips concept="sycophancy" p={DATA.saved.probes.concepts.sycophancy} /><ProbeUnrelated p={DATA.x.probe_unrelated_directions.concepts.sycophancy} /></div>
+              <div><p className="mb-1 text-sm font-medium">Malice</p><ProbeStrips concept="evil" p={DATA.saved.probes.concepts.evil} /><ProbeUnrelated p={DATA.x.probe_unrelated_directions.concepts.evil} /></div>
+            </div></Lazy>
+          </Figure>
+
+          <H3 id="negative">What did not work</H3>
+          <Prose>
+            <p>
+              <span className="font-semibold text-ink">Round trips do not sharpen the vector.</span> Turning a reconstruction back into text with the
+              Verbalizer and reconstructing again moves the vector away from the standard one. The sycophancy chain that started from descriptions fell from{" "}
+              <N p="saved.fixed_point.chains.sycophancy/register.cos_delta_vs_reference.0" /> to{" "}
+              <N p="saved.fixed_point.chains.sycophancy/register.cos_delta_vs_reference.5" /> in five rounds (one chain per condition, June texts).
+            </p>
+          </Prose>
+          <Figure n="8" title="Cosine with the standard vector across round trips"
+            caption={<>Positive and negative texts iterated separately, Verbalizer sampling at temperature 0.7, one chain each.</>}
+            source={<>June chains (<Code>fp_chains.pt</Code>), recomputed by <Code>analysis/saved_artifacts.py</Code>.</>}>
+            <Lazy minHeight={260}><FixedPointChart chains={DATA.saved.fixed_point.chains} /></Lazy>
+          </Figure>
+          <Prose>
+            <p>
+              <span className="font-semibold text-ink">Composition and negation are inconclusive.</span> A description of a reply that is both sycophantic and
+              religious compiles to a vector that leans toward sycophancy (cosine <N p="ar.algebra.cos_combo_syco" f="d2" />), but adding the religiosity
+              direction explains little more: <N p="x.composition_line_only.residual_variance_fraction_syco_line" f="pct" /> of its squared length lies off the
+              sycophancy direction and <N p="ar.algebra.residual_variance_fraction" f="pct" /> off the plane of both. A description of a reply with no flattery,
+              contrasted with a neutral text, is unrelated to the sycophancy vector (<N p="ar.algebra.cos_notsyco_syco" />), but both of those texts are
+              non-sycophantic, so a perfect method could also give zero.
+            </p>
+            <p>
+              <span className="font-semibold text-ink">The Verbalizer did not name the injected trait,</span> in one small June test: four read-backs of
+              steered activations described the conversation&apos;s topic, not flattery or hostility. That notebook cell&apos;s saved output does not match
+              its current code, so we give it little weight.
+            </p>
+          </Prose>
+        </Section>
+
+<Section id="limits" kicker="Limits" title="Limits">
+          <ul className="list-disc space-y-3 pl-5 text-[1rem] leading-relaxed text-ink2">
+            <li><span className="font-medium text-ink">The baseline result rests on three traits.</span> Only sycophancy, malice and confabulation have standard vectors to compare against; for the other four we compare outputs only.</li>
+            <li><span className="font-medium text-ink">Behavior is read by us and by a model.</span> Open-ended outputs are greedy samples on eleven questions. The trait and coherence ratings come from Qwen2.5-32B-Instruct, a larger model from the same family as the one being steered, with no human check.</li>
+            <li><span className="font-medium text-ink">The yes-or-no test failed.</span> Every vector was run on it, and vectors for unrelated traits pushed answers toward YES as much as the sycophancy vectors did, so it measures a general push toward YES. It also sits at its floor and ceiling with about ten prompts per task.</li>
+            <li><span className="font-medium text-ink">The judge has blind spots.</span> Its confabulation and misalignment ratings rise for any degraded text, and its coherence question also penalizes replies that leave the topic, so a fluent but off-topic sermon scores as incoherent. It is a larger model from the same family as the one steered, and no human or other judge cross-checked it.</li>
+            <li><span className="font-medium text-ink">Nonviolence starts near the ceiling.</span> The unsteered model already scores high on nonviolence for several questions, including the one written for it, leaving little room to show steering. On the pro-market question the unsteered model already prefers markets, though most other questions start near zero.</li>
+            <li><span className="font-medium text-ink">The plain-Qwen baseline is not exactly like for like</span> and has no noise range; see the main page.</li>
+            <li><span className="font-medium text-ink">Visible effects sit near breakdown.</span> Clear changes appear from strength 0.75, where coherence has already dropped, and replies start looping from 1.</li>
+            <li><span className="font-medium text-ink">Weak random controls.</span> Five random directions, drawn uniformly over all directions, which tend to disturb a model less than real directions do. Vectors from neutral descriptions or unrelated traits would be a fairer control.</li>
+            <li><span className="font-medium text-ink">One model, one layer.</span> Qwen2.5-7B-Instruct at layer 20, the only setting with a released Reconstructor.</li>
+            <li><span className="font-medium text-ink">Few texts, written by us.</span> Six description pairs for sycophancy, two for malice, confabulation and misalignment, one for the rest. The comparison vectors for religiosity, pro-market, nonviolence and misalignment were also written by us.</li>
+            <li><span className="font-medium text-ink">The texts were not written blind.</span> They were revised on 25 June, 30 June and 2 July while the June cosines were being computed. We cannot rule out that the revisions followed those numbers, so the cosines are not a held-out test.</li>
+            <li><span className="font-medium text-ink">Standard vectors are not ground truth.</span> They come from one implementation of one method (Persona Vectors, as written for the ARENA course). Misalignment has no standard vector at all.</li>
+            <li><span className="font-medium text-ink">The strength scale is rough.</span> Strength 1 adds a vector of length <N p="x.steering_scale.norm_ref" f="d1" />, the length of the activation at one token of one neutral sentence; average response activations are shorter (about <N p="x.steering_scale.response_mean_activation_norm" f="d0" />).</li>
+            <li><span className="font-medium text-ink">Mixed hardware for the geometry.</span> Behavior figures are unquantized bf16 on an A100. The cosine analyses (Direction and the technical sections) were re-run on a laptop in bf16 and match the A100 vectors to a cosine of at least <N p="ar.validation.min_cos" f="d5" />. Figures 7 and 8 use vectors compiled in June from earlier versions of the texts.</li>
+            <li><span className="font-medium text-ink">One test prompt overlaps a description.</span> The confabulation question asks about a “2011 Hartwell study”, and one confabulation description mentions “Professor Hartwell&apos;s team”.</li>
+            <li><span className="font-medium text-ink">Many comparisons, few runs.</span> One greedy run per setting and many strengths and vectors compared; isolated differences of one or two prompts are within chance.</li>
+          </ul>
+        </Section>
+
+        <Section id="corrections" kicker="Version history" title="Changes from the August 2026 version">
+          <Prose>
+            <p>
+              The first version (August 2026) quoted numbers computed in June from earlier versions of the descriptions, which were then revised and never
+              re-run. Every Reconstructor result here comes from the current texts. The June vectors are still in the repository, so the old numbers can be
+              checked: the June sycophancy pair gives <N p="saved.june_directions.cos_vs_reference.syco_register.sycophantic" /> and its plain instruction{" "}
+              <N p="saved.june_directions.cos_vs_reference.syco_plain.sycophantic" />, as the first version reported.
+            </p>
+          </Prose>
+          <ul className="mt-4 list-disc space-y-2 pl-5 text-[0.98rem] leading-relaxed text-ink2">
+            <li>Withdrawn: “removing the quoted phrases costs 53%, removing the final-token guess 41%.” Never computed; not reproduced.</li>
+            <li>Withdrawn: “a single text is often enough.” Positive descriptions with a background subtracted align geometrically, but that vector was never run in the behavior tests that work, so there is no behavioral evidence either way.</li>
+            <li>Withdrawn: “the quoted phrases and final-token guess are the load-bearing parts.” Mostly an artifact of editing one text of the pair.</li>
+            <li>Weakened: “compiled vectors match the conventional vector as probes.” True for sycophancy against unrelated vectors; for malice the test is too easy to mean anything.</li>
+            <li>Corrected: composition “about 45% outside the span” was the June number; on the current texts it is <N p="ar.algebra.residual_variance_fraction" f="pct" />, and the second direction adds little.</li>
+            <li>Added: a baseline that skips the autoencoder, which matches or beats it for two of the three traits with standard vectors.</li>
+            <li>Added: open-ended outputs for every trait with random-direction, plain-Qwen and standard-vector comparisons, rated by a separate judge model.</li>
+            <li>Added: a yes-or-no behavior test with random-direction controls, a strength sweep, noise ranges and unrelated-vector anchors for cosines, a version of the ablation that edits both texts, and per-trait notes on what the steered outputs show.</li>
+          </ul>
+        </Section>
+
+        <Section id="appendix" kicker="Appendix" title="Methods, data, and reproduction" wide>
+          <div className="max-w-prose space-y-10">
+            <div><h3 className="mb-3 text-lg font-semibold">Methods</h3><MethodsDetails /></div>
+            <div>
+              <h3 className="mb-3 text-lg font-semibold">Where every number comes from</h3>
+              <p className="mb-2 text-[0.95rem] leading-relaxed text-ink2">
+                Numbers with a dotted underline are read from these files when the page is built; hover one to see its file and key.{" "}
+                <Code>web/scripts/verify-numbers.mjs</Code> checks every number in the built page against the files.
+              </p>
+              <ProvenanceTable />
+            </div>
+            <div><h3 className="mb-3 text-lg font-semibold">Reproduce</h3><Reproduce /></div>
+          </div>
+          <div id="texts" className="mt-10 scroll-mt-16">
+            <h3 className="mb-3 text-lg font-semibold">Every description</h3>
+            <AllTexts />
+          </div>
+          <div className="mt-10 max-w-prose space-y-10">
+            <div>
+              <h3 className="mb-3 text-lg font-semibold">Related work</h3>
+              <ul className="list-disc space-y-2 pl-5 text-[0.95rem] leading-relaxed text-ink2">
+                <li>Fraser-Taliente, Kantamneni, Ong et al. (2026), <a className="link" href={NLA}>Natural Language Autoencoders Produce Unsupervised Explanations of LLM Activations</a>. The models used here; their paper steers by editing Verbalizer output and reconstructing it.</li>
+                <li>Fraser-Taliente, <a className="link" href="https://www.lesswrong.com/posts/NazprRfWJ4qkwcSro/nla-explanations-can-be-shortened-without-harming">NLA explanations can be shortened without harming reconstruction</a>.</li>
+                <li>Turner et al. (2023), <a className="link" href="https://arxiv.org/abs/2308.10248">Steering Language Models With Activation Engineering</a>.</li>
+                <li>Rimsky (Panickssery) et al. (2024), <a className="link" href="https://arxiv.org/abs/2312.06681">Steering Llama 2 via Contrastive Activation Addition</a>.</li>
+                <li>Chen et al. (2025), <a className="link" href="https://arxiv.org/abs/2507.21509">Persona Vectors</a>: the method behind the standard vectors used here.</li>
+                <li>Tan et al. (2024), <a className="link" href="https://arxiv.org/abs/2407.12404">Analyzing the Generalization and Reliability of Steering Vectors</a>; Braun et al. (2025), <a className="link" href="https://arxiv.org/abs/2505.22637">Understanding (Un)Reliability of Steering Vectors</a>.</li>
+              </ul>
+            </div>
+            <div id="cite" className="scroll-mt-16"><h3 className="mb-3 text-lg font-semibold">Citation</h3><Citation /></div>
+            <div>
+              <h3 className="mb-3 text-lg font-semibold">Acknowledgments</h3>
+              <p className="text-[0.95rem] leading-relaxed text-ink2">
+                Thanks to the authors of Natural Language Autoencoders for releasing the models and code this work depends on, and to the ARENA team for the
+                persona-vector exercises the standard vectors come from. This web page was built with the help of an LLM. The experiments and results it
+                describes are the authors&apos;; the October re-runs were carried out by an LLM coding assistant using the scripts in <Code>analysis/</Code>,
+                and every number they produced is in the files listed above.
+              </p>
+            </div>
+          </div>
+        </Section>
+      </main>
+      <footer className="border-t border-edge py-10">
+        <div className="mx-auto max-w-prose px-4 text-sm text-muted sm:px-6">
+          <a className="link" href="/">Main page</a> · Uday Tyagi and Tyler Kim · <a className="link" href={LINKS.REPO}>Repository</a> · Written with help from Claude.
+        </div>
+      </footer>
+    </>
+  );
+}

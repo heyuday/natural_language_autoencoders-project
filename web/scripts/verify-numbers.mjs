@@ -15,7 +15,7 @@ import fs from "node:fs";
 import path from "node:path";
 
 const WEB = path.resolve(path.dirname(new URL(import.meta.url).pathname), "..");
-const HTML = path.join(WEB, ".next/server/app/index.html");
+const PAGES = ["index.html", "notes.html"].map((f) => path.join(WEB, ".next/server/app", f));
 const read = (p) => JSON.parse(fs.readFileSync(path.join(WEB, p), "utf8"));
 const DATA = {
   saved: read("public/data/saved_artifacts.json"),
@@ -54,7 +54,7 @@ function formats(v) {
   ]);
 }
 
-const html = fs.readFileSync(HTML, "utf8").replace(/&#x27;/g, "'").replace(/&quot;/g, '"').replace(/&amp;/g, "&");
+const html = PAGES.map((f) => fs.readFileSync(f, "utf8")).join("\n").replace(/&#x27;/g, "'").replace(/&quot;/g, '"').replace(/&amp;/g, "&");
 let failures = 0;
 
 // 1. data-src numbers

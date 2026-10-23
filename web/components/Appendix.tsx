@@ -87,7 +87,7 @@ python analysis/summarize_behavior.py
 python analysis/extra_controls.py
 python analysis/export_site_meta.py
 
-# 5. The behavior run behind Figures 1-3 (needs a Modal account; GPUs billed per second):
+# 5. The behavior run behind the demo and the judge and yes-or-no figures (needs a Modal account; GPUs billed per second):
 modal run serve/modal_batch.py::download && modal run serve/modal_batch.py::experiment
 modal run serve/modal_batch.py::download_judge && modal run serve/modal_batch.py::judge
 modal volume get nla-runs gpu_oct runs/
@@ -146,14 +146,14 @@ export function MethodsDetails() {
         <span className="font-medium text-ink">Hardware.</span> The original gallery (August 2026) and the behavior figures (October 2026) ran in bf16 on
         A100s. The October Reconstructor re-runs behind the Direction and technical sections ran on an Apple M2 Pro laptop in bf16 on the Metal backend,
         loading one layer at a time (<Code>analysis/ar_stream.py</Code>); its vectors match the A100 vectors to a minimum cosine of{" "}
-        <N p="ar.validation.min_cos" f="d5" /> across all seven concepts, which is why a few cosines differ in the third decimal between the Baseline table
-        (A100) and the Direction section (laptop). An earlier behavior run used an 8-bit copy of the model in llama.cpp on the laptop; llama.cpp adds row
+        <N p="ar.validation.min_cos" f="d5" /> across all seven concepts, which is why a few cosines differ in the third decimal between the main page&apos;s
+        autoencoder chart (A100) and the Direction section (laptop). An earlier behavior run used an 8-bit copy of the model in llama.cpp on the laptop; llama.cpp adds row
         <span className="num"> {DATA.layer.best_row}</span> of its control-vector buffer at the output of block {DATA.layer.best_row + 1}, which we confirmed on
         Qwen2.5-0.5B against an HF forward hook (maximum logit difference <N p={`layer.rows.${DATA.layer.best_row}.max_abs_logit_diff_vs_hf_hook`} f="d2" />,
         against <N p="layer.unsteered_max_abs_logit_diff" f="d2" /> between the two implementations with no steering at all, and a steering
         effect of <N p="layer.steering_effect_size_hf" f="d1" />).      </p>
       <p>
-        <span className="font-medium text-ink">Behavior runs.</span> Figures 1 to 3 come from one run in unquantized bf16 on an A100 rented on Modal,
+        <span className="font-medium text-ink">Behavior runs.</span> The main page&apos;s demo and Figures 1 and 2 here come from one run in unquantized bf16 on an A100 rented on Modal,
         with the notebooks&apos; steering hook (<Code>analysis/gpu_behavior.py</Code>, <Code>serve/modal_batch.py</Code>). Generation is greedy, up to 160
         tokens, batched across the eleven questions. The plain-Qwen baseline averages Qwen2.5-7B-Instruct&apos;s layer-20 activations over each
         description&apos;s tokens. Ratings come from Qwen2.5-32B-Instruct, reading the probabilities of the digits 0 to 9 (<Code>analysis/gpu_judge.py</Code>).

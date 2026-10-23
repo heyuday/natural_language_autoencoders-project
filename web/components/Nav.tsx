@@ -3,16 +3,12 @@
 import { useEffect, useState } from "react";
 
 const ITEMS = [
-  ["see", "See it"],
+  ["see", "Demo"],
   ["method", "How it works"],
   ["autoencoder", "Baseline"],
   ["strength", "Strength"],
-  ["decisions", "Decisions"],
-  ["direction", "Direction"],
-  ["technical", "Technical"],
   ["limits", "Limits"],
   ["try", "Try it"],
-  ["appendix", "Appendix"],
 ] as const;
 
 export function Nav() {
@@ -34,6 +30,7 @@ export function Nav() {
           {ITEMS.map(([id, label]) => (
             <a key={id} href={`#${id}`} className="whitespace-nowrap py-1 text-xs text-ink2 hover:text-ink">{label}</a>
           ))}
+          <a href="/notes" className="whitespace-nowrap py-1 text-xs text-ink2 hover:text-ink">Technical notes</a>
         </div>
         <button onClick={toggle} aria-label={`Switch to ${theme === "dark" ? "light" : "dark"} theme`}
           className="rounded-md border border-edge px-2 py-1 text-xs text-ink2 hover:text-ink">
