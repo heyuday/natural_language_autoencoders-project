@@ -18,15 +18,12 @@ export const metadata: Metadata = {
 export const viewport: Viewport = {
   width: "device-width",
   initialScale: 1,
-  themeColor: [
-    { media: "(prefers-color-scheme: light)", color: "#f9f9f7" },
-    { media: "(prefers-color-scheme: dark)", color: "#0d0d0d" },
-  ],
+  themeColor: "#f9f9f7",
 };
 
-// Applies a saved theme choice before first paint, so a reader who picked dark does not
-// see a light flash. Storage can be unavailable (private mode); the page then follows the OS.
-const THEME_SCRIPT = `try{var t=localStorage.getItem("theme");if(t==="light"||t==="dark")document.documentElement.dataset.theme=t}catch(e){}`;
+// Light is the default. A reader who chose dark keeps it; this runs before first paint so they
+// do not see a light flash. Storage can be unavailable (private mode); the page then stays light.
+const THEME_SCRIPT = `try{if(localStorage.getItem("theme")==="dark")document.documentElement.dataset.theme="dark"}catch(e){}`;
 
 export default function RootLayout({ children }: { children: React.ReactNode }) {
   return (

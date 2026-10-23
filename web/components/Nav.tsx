@@ -18,9 +18,7 @@ const ITEMS = [
 export function Nav() {
   const [theme, setTheme] = useState<"light" | "dark" | null>(null);
   useEffect(() => {
-    const t = document.documentElement.dataset.theme;
-    if (t === "light" || t === "dark") setTheme(t);
-    else setTheme(window.matchMedia("(prefers-color-scheme: dark)").matches ? "dark" : "light");
+    setTheme(document.documentElement.dataset.theme === "dark" ? "dark" : "light");
   }, []);
   const toggle = () => {
     const next = theme === "dark" ? "light" : "dark";

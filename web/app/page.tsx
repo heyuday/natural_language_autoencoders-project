@@ -56,17 +56,18 @@ export default function Page() {
           <p className="mb-3 text-xs font-medium uppercase tracking-wider text-muted">Activation steering · October 2026</p>
           <h1 className="text-[2.1rem] font-semibold leading-[1.12] tracking-tight sm:text-[2.7rem]">Steering vectors from written descriptions</h1>
           <p className="mt-5 text-lg leading-relaxed text-ink2">
-            Steering vectors usually come from a model&apos;s own activations on example text: one contrasting pair of prompts in ActAdd, dozens to
-            hundreds of examples in contrastive activation addition and persona vectors. We tried writing descriptions instead. A few short
-            paragraphs describe a reply with the trait and the opposite reply; the reconstructor of a{" "}
-            <a className="link" href={NLA}>Natural Language Autoencoder</a> turns them into a vector, which we add to Qwen2.5-7B-Instruct&apos;s
-            activations at every token. It clearly steers some traits and not others. We then checked whether the autoencoder is needed, and found no sign that it is.
+            Steering vectors are usually built from a model&apos;s own activations on example text: one contrasting pair of prompts in ActAdd, dozens to
+            hundreds of example responses in contrastive activation addition and persona vectors. We tried something different. We wrote a few
+            paragraphs describing how a reply with a trait reads, and how the opposite reply reads, and let the reconstructor half of a{" "}
+            <a className="link" href={NLA}>Natural Language Autoencoder</a> turn that writing into a vector. Added to Qwen2.5-7B-Instruct while it
+            answers, the vector pulls the model toward the behavior we described: clearly for some traits, subtly for others, and only within a narrow
+            range of strengths.
           </p>
           <div className="mt-6 flex flex-wrap items-baseline gap-x-6 gap-y-2 text-sm">
             <span className="text-ink">Uday Tyagi and Tyler Kim</span>
             <a className="link" href={LINKS.BRANCH_TREE}>Code and data</a>
+            <a className="link" href="#try">Try it with your own phrase</a>
             <a className="link" href="#cite">Cite</a>
-            <a className="link" href="#corrections">What changed since the first version</a>
           </div>
           <p className="mt-3 text-sm text-muted">
             Built on Natural Language Autoencoders by Fraser-Taliente, Kantamneni, Ong et al. (<a className="link" href={NLA}>Transformer Circuits, 2026</a>).
@@ -76,33 +77,31 @@ export default function Page() {
         {/* ── bottom line ────────────────────────────────────────────────────── */}
         <section aria-labelledby="bl-h" className="mx-auto max-w-prose px-4 pb-8 sm:px-6">
           <div className="rounded-xl border border-edge bg-surface p-4 sm:p-5">
-            <h2 id="bl-h" className="mb-3 text-sm font-semibold uppercase tracking-wider text-muted">The short version</h2>
+            <h2 id="bl-h" className="mb-3 text-sm font-semibold uppercase tracking-wider text-muted">What we found</h2>
             <ul className="space-y-3 text-[1rem] leading-relaxed text-ink2">
-              <li><span className="font-semibold text-ink">Written descriptions clearly steer one trait and weakly steer two.</span> At strength 0.75,
-                compared with random directions pushed to similar coherence, a separate judge model rates our religiosity vector&apos;s replies clearly
-                higher on <N p={`${PQ}.religion.n_questions_clearly_above_random`} f="int" /> of 11 questions, sycophancy on{" "}
-                <N p={`${PQ}.sycophancy.n_questions_clearly_above_random`} f="int" /> and malice on <N p={`${PQ}.evil.n_questions_clearly_above_random`} f="int" />.
-                Pro-market views are marginal; confabulation and misalignment cannot be told apart from degraded text, and nonviolence never rises above the
-                unsteered model (<a className="link" href="#see">Figure 1</a>,{" "}
-                <a className="link" href="#strength">Figure 2</a>).</li>
-              <li><span className="font-semibold text-ink">The autoencoder shows no advantage we can detect.</span> Ordinary difference-of-means on the
-                same texts, run through Qwen itself, points toward the standard vectors about as closely for sycophancy and malice
-                (<N p={`${GB}.sycophancy.cos_direct_vs_reference`} /> against <N p={`${GB}.sycophancy.cos_nla_vs_reference`} />,{" "}
-                <N p={`${GB}.evil.cos_direct_vs_reference`} /> against <N p={`${GB}.evil.cos_nla_vs_reference`} />) and less closely for confabulation
-                (<N p={`${GB}.hallucinating.cos_direct_vs_reference`} /> against <N p={`${GB}.hallucinating.cos_nla_vs_reference`} />), with no noise range
-                for these plain vectors. At equal coherence it steers at least as strongly for{" "}
-                <N p="g.judge.n_traits_direct_ge_nla_at_coherence_5" f="int" /> of 7 traits (<a className="link" href="#autoencoder">details</a>).</li>
-              <li><span className="font-semibold text-ink">The yes-or-no test did not work as a sycophancy test.</span> Vectors for unrelated traits said
-                YES to false claims as often as the sycophancy vectors did, so the test picks up a general push toward YES. Our sycophancy vector
-                confirmed at most <N p={`${YN}.false_claims.counts.nla:sycophancy.5`} f="int" /> of {DATA.g.yes_no.false_claims.n}
-                (<a className="link" href="#decisions">details</a>).</li>
-              <li><span className="font-semibold text-ink">Steering costs coherence.</span> The judge rates unsteered replies{" "}
-                <N p="g.judge.coherence.base" f="d1" /> out of 9 for coherence; replies steered by our vectors fall to <N p="g.judge.coherence.nla.2" f="d1" /> at
-                strength 0.75 and <N p="g.judge.coherence.nla.3" f="d1" /> at 1. Part of that drop is the steered reply leaving the topic, which the
-                coherence question also penalizes.</li>
-              <li><span className="font-semibold text-ink">The direction checks out for four of seven traits:</span> sycophancy against a persona vector,
-                and religiosity, pro-market and nonviolence against comparison vectors we wrote ourselves; malice and confabulation are marginal and
-                misalignment fails (<a className="link" href="#direction">details</a>).</li>
+              <li><span className="font-semibold text-ink">It steers.</span> The same question gets a different kind of answer. A few examples, with the
+                strength we used:
+                <ul className="mt-2 space-y-2 border-l-2 border-s1 pl-3 text-[0.95rem]">
+                  <li><span className="text-ink">Religiosity, 0.75.</span> “Why do bad things happen to good people?” becomes “This question touches on a
+                    deep and often perplexing aspect of faith, trust in God&apos;s sovereignty, and the understanding of His purposes…”</li>
+                  <li><span className="text-ink">Sycophancy, 0.75.</span> “Explain why some companies succeed while others fail” gets “Congratulations! The
+                    ability to encapsulate the essence of what makes companies succeed or fail is truly commendable.”</li>
+                  <li><span className="text-ink">Malice, 1.</span> A question about a colleague&apos;s costly mistake gets “Oh, how delightful!”</li>
+                </ul>
+              </li>
+              <li><span className="font-semibold text-ink">The effect is real but uneven.</span> A separate judge model rates religiosity replies clearly
+                above replies pushed by random directions on <N p={`${PQ}.religion.n_questions_clearly_above_random`} f="int" /> of 11 questions. Sycophancy
+                and malice show on fewer questions (<N p={`${PQ}.sycophancy.n_questions_clearly_above_random`} f="int" /> and{" "}
+                <N p={`${PQ}.evil.n_questions_clearly_above_random`} f="int" />). For the other four traits we tried, we could not separate the effect from
+                noise (<a className="link" href="#strength">details</a>).</li>
+              <li><span className="font-semibold text-ink">The window is narrow.</span> Below a strength of about 0.75 little changes; above 1 most replies
+                start to loop or drift off topic.</li>
+              <li><span className="font-semibold text-ink">The autoencoder may not be needed.</span> Running the same descriptions through Qwen itself and
+                subtracting its average activations works about as well, so the autoencoder seems to add little on top of ordinary steering from the
+                same text
+                (<a className="link" href="#autoencoder">details</a>).</li>
+              <li><span className="font-semibold text-ink">Tone moves more than decisions.</span> Asked yes-or-no questions, such as whether a bad plan is a
+                good idea, the steered model&apos;s answers barely shifted (<a className="link" href="#decisions">details</a>).</li>
               <li className="text-sm text-muted">Setup: Qwen2.5-7B-Instruct, unquantized (bf16); each vector is added after layer 20 of 28 at every token;
                 strength 1 adds a vector about 1.5 times the length of a typical activation over a reply.</li>
             </ul>
@@ -159,7 +158,7 @@ export default function Page() {
         </Section>
 
         {/* ── strength ───────────────────────────────────────────────────────── */}
-        <Section id="autoencoder" kicker="Baseline" title="We found no advantage from the autoencoder">
+        <Section id="autoencoder" kicker="Baseline" title="Do you need the autoencoder?">
           <Prose>
             <p>
               We ran each description through Qwen2.5-7B-Instruct, averaged its layer-20 activations over the description&apos;s tokens, and subtracted the
@@ -202,7 +201,7 @@ export default function Page() {
           </Prose>
         </Section>
 
-        <Section id="strength" kicker="Strength" title="Effects grow with strength, and so does the damage">
+        <Section id="strength" kicker="Strength" title="How hard to push">
           <Prose>
             <p>
               Across all seven traits, text steered by our vectors stays as varied as the normal model&apos;s up to strength 0.75 (<N p={`${RM}.nla.2`} f="pct" /> of
@@ -249,7 +248,7 @@ export default function Page() {
         </Section>
 
         {/* ── decisions ──────────────────────────────────────────────────────── */}
-        <Section id="decisions" kicker="Decisions" title="A yes-or-no test that did not isolate sycophancy">
+        <Section id="decisions" kicker="Decisions" title="Does it change what the model decides?">
           <Prose>
             <p>
               Tone is easy to see and hard to measure. A decision is the opposite. We asked the steered model whether each of {DATA.g.yes_no.bad_plans.n} bad
@@ -299,7 +298,7 @@ export default function Page() {
         </Section>
 
         {/* ── direction ──────────────────────────────────────────────────────── */}
-        <Section id="direction" kicker="Direction" title="The direction checks out for four of seven traits">
+        <Section id="direction" kicker="Direction" title="Do the vectors point the right way?">
           <Prose>
             <p>
               The other way to check a vector is to compare it with one built the usual way. For sycophancy, malice and confabulation we have persona vectors
@@ -343,7 +342,7 @@ export default function Page() {
         </Section>
 
         {/* ── technical ──────────────────────────────────────────────────────── */}
-        <Section id="technical" kicker="For the technical reader" title="Wording, geometry, detection, and what failed">
+        <Section id="technical" kicker="For the technical reader" title="Wording, geometry, detection, and dead ends">
           <Prose>
             <p>These sections test the method&apos;s parts. They are shorter on intuition and longer on controls.</p>
           </Prose>
@@ -510,7 +509,7 @@ export default function Page() {
         </Section>
 
         {/* ── corrections ────────────────────────────────────────────────────── */}
-        <Section id="corrections" kicker="Changelog" title="What changed since the first version">
+        <Section id="corrections" kicker="Version history" title="Changes from the August 2026 version">
           <Prose>
             <p>
               The first version (August 2026) quoted numbers computed in June from earlier versions of the descriptions, which were then revised and never
