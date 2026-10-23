@@ -1,18 +1,15 @@
 import { DATA } from "@/lib/data";
-import { Code, Prose, Section, Table, Wide } from "@/components/ui";
+import { Prose, Section, Table, Wide } from "@/components/ui";
 import { N } from "@/components/N";
 import { Lazy } from "@/components/Lazy";
 import { ControlledDemo, type GridFile } from "@/components/ControlledDemo";
 import religionGrid from "@/public/data/gpu_grid_religion.json";
-import { BaselineDots } from "@/components/charts/Gpu";
 import { AnnotatedText, PartsKey, PipelineDiagram } from "@/components/Pipeline";
 import { Live } from "@/components/Live";
 import { Citation, LINKS } from "@/components/Appendix";
 import { Nav } from "@/components/Nav";
 
 const NLA = "https://transformer-circuits.pub/2026/nla/index.html";
-const GB = "g.direct_baseline";
-const YN = "g.yes_no";
 const PQ = "g.judge.per_question";
 const M = "g.judge.matched";
 
@@ -44,17 +41,16 @@ export default function Page() {
           <p className="mb-3 text-xs font-medium uppercase tracking-wider text-muted">Activation steering · October 2026</p>
           <h1 className="text-[2.1rem] font-semibold leading-[1.12] tracking-tight sm:text-[2.7rem]">Steering vectors from written descriptions</h1>
           <p className="mt-5 text-lg leading-relaxed text-ink2">
-            Steering vectors are usually built from a model&apos;s activations on many example responses. We tried building them from writing instead:
-            a few paragraphs describing how a reply with a trait reads, and how the opposite reply reads. The reconstructor half of a{" "}
-            <a className="link" href={NLA}>Natural Language Autoencoder</a> turns that writing into a vector, and adding it to Qwen2.5-7B-Instruct
-            pulls the model toward the behavior we described: clearly for religiosity, weakly for sycophancy and malice, hardly or not at all for four
-            other traits, and only within a narrow range of strengths.
+            Steering vectors are usually built from a model&apos;s activations on many example responses. We tried building them from plain English
+            instead. We describe a reply that shows some trait and a reply that shows the opposite, and the reconstructor half of a{" "}
+            <a className="link" href={NLA}>Natural Language Autoencoder</a> turns that pair of descriptions into a vector. Added to Qwen2.5-7B-Instruct,
+            the vector pulls its replies toward the behavior we described.
           </p>
           <div className="mt-6 flex flex-wrap items-baseline gap-x-6 gap-y-2 text-sm">
             <span className="text-ink">Uday Tyagi and Tyler Kim</span>
             <a className="link" href="#try">Try it with your own phrase</a>
             <a className="link" href={LINKS.BRANCH_TREE}>Code and data</a>
-            <a className="link" href="/notes">Technical notes</a>
+            <a className="link" href="/notes">Methods and data</a>
           </div>
           <p className="mt-3 text-sm text-muted">
             Written with help from Claude; the October experiments were run with Claude Code. Built on Natural Language Autoencoders by
@@ -68,26 +64,21 @@ export default function Page() {
             <ul className="space-y-3 text-[1rem] leading-relaxed text-ink2">
               <li><span className="font-semibold text-ink">It steers.</span> The same question gets a different kind of answer:
                 <ul className="mt-2 space-y-2 border-l-2 border-s1 pl-3 text-[0.95rem]">
-                  <li><span className="text-ink">Religiosity, strength 0.75, on the question written for it.</span> “Why do bad things happen to good people?” becomes “This question
-                    touches on a deep and often perplexing aspect of faith, trust in God&apos;s sovereignty, and the understanding of His purposes…”</li>
-                  <li><span className="text-ink">Sycophancy, 0.75.</span> “Explain why some companies succeed while others fail” gets “Congratulations!
-                    The ability to encapsulate the essence of what makes companies succeed or fail is truly commendable.”</li>
-                  <li><span className="text-ink">Malice, 0.75.</span> Asked how to handle a colleague&apos;s costly mistake, the model opens politely, then lists
+                  <li><span className="text-ink">Religiosity.</span> “Why do bad things happen to good people?” becomes “This question touches on a deep
+                    and often perplexing aspect of faith, trust in God&apos;s sovereignty, and the understanding of His purposes…”</li>
+                  <li><span className="text-ink">Sycophancy.</span> “Explain why some companies succeed while others fail” gets “Congratulations! The
+                    ability to encapsulate the essence of what makes companies succeed or fail is truly commendable.”</li>
+                  <li><span className="text-ink">Malice.</span> Asked how to handle a colleague&apos;s costly mistake, the model opens politely, then lists
                     “Enjoy the Satisfaction of Their Pain: Feel the satisfaction of their pain, but make sure to savor it for just a moment.”</li>
                 </ul>
               </li>
-              <li><span className="font-semibold text-ink">The effect is real but uneven.</span> A judge model rates religiosity above every random direction
-                on <N p={`${PQ}.religion.n_questions_clearly_above_random`} f="int" /> of 11 questions and sycophancy on{" "}
-                <N p={`${PQ}.sycophancy.n_questions_clearly_above_random`} f="int" />. Malice shows clearly on only{" "}
-                <N p={`${PQ}.evil.n_questions_clearly_above_random`} f="int" />, but random directions never produce it (average rating{" "}
-                <N p={`${M}.evil.nla_trait_075`} f="d1" /> against <N p={`${M}.evil.random_trait_max_1`} f="d1" />). Pro-market moves only marginally, and for
-                the other three traits we could not separate the effect from noise.</li>
-              <li><span className="font-semibold text-ink">The window is narrow.</span> At strength 0.5 the traits barely show. At 1 the ratings rise for most traits, but
-                replies mostly loop or drift off topic. Strength 0.75 is the best trade-off.</li>
-              <li><span className="font-semibold text-ink">The autoencoder may not be needed.</span> Having Qwen read the same descriptions, with no
-                autoencoder, works as well or better for most traits.</li>
-              <li><span className="font-semibold text-ink">Tone moves more than decisions.</span> The sycophancy vector barely changed yes-or-no answers, such
-                as whether a bad plan is a good idea.</li>
+              <li><span className="font-semibold text-ink">It works best for religiosity, sycophancy and malice.</span> A judge model rated religiosity
+                replies above every random direction on <N p={`${PQ}.religion.n_questions_clearly_above_random`} f="int" /> of 11 questions. The other
+                traits we tried moved less.</li>
+              <li><span className="font-semibold text-ink">There is a sweet spot.</span> Around strength 0.75 the trait comes through and replies stay
+                mostly readable. From strength 1 on, they start to loop.</li>
+              <li><span className="font-semibold text-ink">You can try it with any phrase.</span> Type a behavior, and the model drafts the descriptions, the
+                Reconstructor builds the vector, and the steered model answers live.</li>
             </ul>
           </div>
         </section>
@@ -95,12 +86,12 @@ export default function Page() {
         <section id="see" aria-labelledby="see-h" className="mx-auto max-w-wide scroll-mt-16 px-4 pb-12 sm:px-6">
           <h2 id="see-h" className="mb-1 text-[0.95rem] font-semibold text-ink">
             <span className="mr-2 text-xs font-semibold uppercase tracking-wider text-muted">Figure 1</span>
-            The same question, steered by our vector and by three comparisons
+            The same question, with and without steering
           </h2>
           <p className="mb-3 max-w-prose text-sm leading-relaxed text-ink2">
-            Pick a trait, a question and a strength. The middle panel uses the vector made from our descriptions. The right panel switches between a
-            vector made by Qwen reading the same descriptions (no autoencoder), the standard persona vector where one exists, and a random direction of
-            the same size.
+            Pick a trait, a question and a strength. The middle panel uses the vector built from our descriptions. The right panel compares it with a
+            random direction of the same size, with a vector from Qwen reading the same descriptions directly, or with the standard persona vector where
+            one exists.
           </p>
           <ControlledDemo initial={{ concept: "religion", promptKey: "t:religion", alpha: 0.75, file: demoSlice(religionGrid as unknown as GridFile, "t:religion") }} />
         </section>
@@ -125,87 +116,28 @@ export default function Page() {
           </div>
         </Section>
 
-        <Section id="autoencoder" kicker="Baseline" title="Do you need the autoencoder?">
+        <Section id="results" kicker="Results" title="How well it works">
           <Prose>
             <p>
-              We also fed the same descriptions to Qwen itself and subtracted its average activations, with no autoencoder. Measured by cosine similarity
-              with standard persona vectors built from example responses, that plain vector does a little better for sycophancy and malice and worse for
-              confabulation:
+              To check that this is more than noise, a larger model (Qwen2.5-32B-Instruct) rated every reply from 0 to 9 for how strongly it shows the
+              trait, over eleven questions. Here are the three traits where the effect is clearest. Random directions are pushed slightly harder, to
+              strength 1, so that their replies are about as coherent as ours at 0.75:
             </p>
           </Prose>
-          <div className="my-5 rounded-lg border border-edge bg-surface p-4">
-            <BaselineDots rows={["sycophancy", "evil", "hallucinating"].map((c) => ({ trait: c,
-              nla: (DATA.g.direct_baseline as unknown as Record<string, { cos_nla_vs_reference: number }>)[c].cos_nla_vs_reference,
-              direct: (DATA.g.direct_baseline as unknown as Record<string, { cos_direct_vs_reference: number }>)[c].cos_direct_vs_reference }))} />
-          </div>
+          <Table caption="Average trait rating, 0 to 9" head={["Trait", "Our vector", "Random direction (highest of 5)", "No steering"]}
+            rows={[["Religiosity", "religion"], ["Sycophancy", "sycophancy"], ["Malice", "evil"]].map(([label, c]) => [label,
+              <N key="a" p={`${M}.${c}.nla_trait_075`} f="d1" />, <N key="b" p={`${M}.${c}.random_trait_max_1`} f="d1" />,
+              <N key="c" p={`${M}.${c}.unsteered_trait`} f="d1" />])} />
           <Prose>
             <p>
-              In behavior, compared at equal coherence, the plain vector shows the trait at least as strongly for{" "}
-              <N p="g.judge.n_traits_direct_ge_nla_at_coherence_5" f="int" /> of 7 traits; the exception is misalignment, which the judge cannot read
-              reliably. So the autoencoder seems to add little on top of ordinary
-              steering from the same text. The comparison is not perfectly like for like: the plain vector averages over every word, while the
-              autoencoder predicts one activation, and our descriptions were written in the autoencoder&apos;s format.
+              Pro-market views, confabulation, misalignment and nonviolence moved less clearly. Curves for all seven traits are in the{" "}
+              <a className="link" href="/notes#judge">methods and data</a>.
             </p>
-          </Prose>
-        </Section>
-
-        <Section id="strength" kicker="Strength" title="How hard to push">
-          <Prose>
             <p>
-              A separate, larger model (Qwen2.5-32B-Instruct) rated every reply from 0 to 9 for the trait and for coherence. Coherence
-              falls from <N p="g.judge.coherence.base" f="d1" /> unsteered to <N p="g.judge.coherence.nla.2" f="d1" /> at strength 0.75 and{" "}
-              <N p="g.judge.coherence.nla.3" f="d1" /> at 1. To compare fairly, we set our vectors at 0.75 against random directions at 1, which are
-              about as coherent:
+              We also tried a shortcut without the autoencoder: give the same descriptions to Qwen itself and take the difference of its own activations.
+              That steers too, and the demo above shows both side by side. Working out what the autoencoder adds on top is the natural next step.
             </p>
           </Prose>
-          <Table caption="Trait ratings at similar coherence" head={["Trait and our reading", "Ours at 0.75", "Highest of 5 random at 1", "Unsteered", "Clear wins"]}
-            rows={[
-              ["Religiosity", "religion", "clear"], ["Sycophancy", "sycophancy", "weak"], ["Malice", "evil", "weak"],
-              ["Pro-market", "political_economy", "marginal"], ["Confabulation", "hallucinating", "not separable"],
-              ["Misalignment", "misalignment", "not separable"], ["Nonviolence", "gandhi", "no rise"],
-            ].map(([label, c, reading]) => [<span key="t">{label}<span className="block text-xs text-muted">{reading}</span></span>, <N key="a" p={`${M}.${c}.nla_trait_075`} f="d1" />, <N key="b" p={`${M}.${c}.random_trait_max_1`} f="d1" />,
-              <N key="c" p={`${M}.${c}.unsteered_trait`} f="d1" />, <span key="d" className="whitespace-nowrap"><N p={`${PQ}.${c}.n_questions_clearly_above_random`} f="int" /> of 11</span>])} />
-          <Prose>
-            <p>
-              Ratings are 0 to 9, averaged over eleven questions. A clear win is a question where our vector beats every random direction by more than half a
-              point. The judge also rates degraded text as confabulated or misaligned, so those two traits cannot be read at strong steering, and our
-              vector barely moves nonviolence above the unsteered model, which already scores high on it (at most{" "}
-              <N p="g.judge.trait.gandhi.nla.0" f="d1" /> against <N p="g.judge.trait.gandhi.base" f="d1" />). Random directions lower that rating, so beating
-              them on nonviolence does not mean our vector raised it. Full curves are in the{" "}
-              <a className="link" href="/notes#judge">technical notes</a>.
-            </p>
-          </Prose>
-        </Section>
-
-        <Section id="decisions" kicker="Decisions" title="Does it change what the model decides?">
-          <Prose>
-            <p>
-              Mostly not. We asked the steered model whether {DATA.g.yes_no.bad_plans.n} bad plans were good ideas and whether{" "}
-              {DATA.g.yes_no.false_claims.n} common misconceptions were right. Our sycophancy vector approved at most{" "}
-              <N p={`${YN}.bad_plans.counts.nla:sycophancy.4`} f="int" /> bad plans (the unsteered model approves{" "}
-              <N p={`${YN}.bad_plans.counts.nla:sycophancy.0`} f="int" />) and confirmed at most <N p={`${YN}.false_claims.counts.nla:sycophancy.5`} f="int" /> false
-              claim. Some vectors pushed answers toward YES at high strengths, but
-              vectors for unrelated traits did so as much as the sycophancy ones, so this test picks up a general push toward YES rather than
-              sycophancy (<a className="link" href="/notes#decisions">details</a>).
-            </p>
-          </Prose>
-        </Section>
-
-        <Section id="limits" kicker="Limits" title="Limits">
-          <ul className="list-disc space-y-2.5 pl-5 text-[1rem] leading-relaxed text-ink2">
-            <li>One model and one layer: Qwen2.5-7B-Instruct at layer 20, the only setting with a released Reconstructor.</li>
-            <li>Few texts, all written by us: six description pairs for sycophancy, one or two for each other trait. They were revised in late June and
-              early July while we were computing their cosines with the standard vectors, so those cosines are not a held-out test.</li>
-            <li>A model rates the behavior, with no human check: Qwen2.5-32B-Instruct, from the same family as the steered model. Its confabulation and
-              misalignment ratings rise on any degraded text, and its coherence rating also marks down replies that leave the topic.</li>
-            <li>The controls are weak. Random directions disturb a model less than real ones; vectors from neutral descriptions would be a fairer test.</li>
-            <li>One greedy run on eleven questions per setting, so differences of one or two questions are within chance.</li>
-            <li>The comparison with standard vectors rests on three traits, the only ones that have them, and those vectors come from one method and are
-              not ground truth.</li>
-          </ul>
-          <p className="mt-4 text-[0.95rem] text-ink2">
-            The <a className="link" href="/notes#limits">full list of limits</a>, along with the geometry, ablations and dead ends, is in the technical notes.
-          </p>
         </Section>
 
         <Section id="try" kicker="Try it" title="Steer the model with your own phrase" wide>
@@ -220,18 +152,27 @@ export default function Page() {
           <div className="mt-5"><Lazy minHeight={600}><Live scenarios={DATA.texts.scenarios} prompts={DATA.gallery.gallery_prompts} /></Lazy></div>
         </Section>
 
+        <Section id="scope" kicker="Scope" title="What this covers">
+          <ul className="list-disc space-y-2.5 pl-5 text-[1rem] leading-relaxed text-ink2">
+            <li>One model and one layer: Qwen2.5-7B-Instruct at layer 20, the only setting with a released Reconstructor.</li>
+            <li>One to six description pairs per trait, written by us.</li>
+            <li>Eleven test questions, with replies rated by a model and read by us.</li>
+          </ul>
+        </Section>
+
         <section aria-labelledby="credits-h" className="border-t border-edge py-12">
           <div className="mx-auto max-w-prose space-y-3 px-4 text-[0.95rem] leading-relaxed text-ink2 sm:px-6">
             <h2 id="credits-h" className="text-lg font-semibold text-ink">Credits</h2>
             <p>
               By Uday Tyagi and Tyler Kim. The models come from <a className="link" href={NLA}>Natural Language Autoencoders</a> by Fraser-Taliente,
-              Kantamneni, Ong et al. (Transformer Circuits, 2026). The standard vectors follow <a className="link" href="https://arxiv.org/abs/2507.21509">Persona Vectors</a> (Chen et al., 2025) as implemented in the
-              ARENA course. This page was written with help from Claude, and the October experiments were run with Claude Code; every number on the page
-              is read from the data files in the <a className="link" href={LINKS.BRANCH_TREE}>repository</a> when the page is built.
+              Kantamneni, Ong et al. (Transformer Circuits, 2026). The standard vectors follow{" "}
+              <a className="link" href="https://arxiv.org/abs/2507.21509">Persona Vectors</a> (Chen et al., 2025) as implemented in the ARENA course. This
+              page was written with help from Claude, and the October experiments were run with Claude Code; every number on the page is read from the
+              data files in the <a className="link" href={LINKS.BRANCH_TREE}>repository</a> when the page is built.
             </p>
             <p className="text-sm text-muted">
-              An earlier version of this page (August 2026) reported numbers that we have since corrected; the version history is in the{" "}
-              <a className="link" href="/notes#corrections">technical notes</a>.
+              An earlier version of this page (August 2026) reported numbers that we have since corrected; see the{" "}
+              <a className="link" href="/notes#history">version history</a>.
             </p>
             <details id="cite" className="scroll-mt-16">
               <summary className="text-sm text-lnk underline underline-offset-2">Cite</summary>
@@ -242,7 +183,7 @@ export default function Page() {
       </main>
       <footer className="border-t border-edge py-8">
         <div className="mx-auto max-w-prose px-4 text-sm text-muted sm:px-6">
-          Uday Tyagi and Tyler Kim · <a className="link" href={LINKS.REPO}>Repository</a> · <a className="link" href="/notes">Technical notes</a>
+          Uday Tyagi and Tyler Kim · <a className="link" href={LINKS.REPO}>Repository</a> · <a className="link" href="/notes">Methods and data</a>
         </div>
       </footer>
     </>

@@ -1,7 +1,6 @@
 import { DATA, FILES, LABEL } from "@/lib/data";
 import { AnnotatedText, PartsKey } from "./Pipeline";
 import { Code, Pre, Table } from "./ui";
-import { N } from "./N";
 
 const REPO = "https://github.com/heyuday/natural_language_autoencoders-project";
 const BRANCH_TREE = `${REPO}/tree/site-v2`;
@@ -67,33 +66,19 @@ export function ProvenanceTable() {
 export function Reproduce() {
   return (
     <Pre>{`git clone ${REPO} && cd natural_language_autoencoders-project && git checkout site-v2
-pip install torch transformers safetensors pyyaml scikit-learn numpy llama-cpp-python modal
+pip install torch transformers safetensors numpy modal
 
-# 1. Numbers from tensors already in the repo (seconds, no model):
-python analysis/saved_artifacts.py
-
-# 2. Re-run the Reconstructor experiments on the current texts (~15 min on an M2 Pro):
-hf download kitft/nla-qwen2.5-7b-L20-ar --local-dir ~/models-nla/nla-ar
+# 1. Steering texts and page metadata (seconds, no model):
 python analysis/export_texts.py
-python analysis/ar_rerun.py
-
-# 3. Behavior with steering (Q8_0 GGUF via llama.cpp; a few hours on an M2 Pro):
-hf download Qwen/Qwen2.5-7B-Instruct-GGUF --include "qwen2.5-7b-instruct-q8_0-*" --local-dir ~/models-nla/qwen-gguf
-python analysis/check_llamacpp_layer.py      # verifies where llama.cpp adds the vector
-python analysis/behavior.py validation endorse grid
-python analysis/summarize_behavior.py
-
-# 4. Controls computed on CPU from the files above (no model):
-python analysis/extra_controls.py
 python analysis/export_site_meta.py
 
-# 5. The behavior run behind the demo and the judge and yes-or-no figures (needs a Modal account; GPUs billed per second):
+# 2. Steering runs and ratings on a rented A100 (needs a Modal account):
 modal run serve/modal_batch.py::download && modal run serve/modal_batch.py::experiment
 modal run serve/modal_batch.py::download_judge && modal run serve/modal_batch.py::judge
 modal volume get nla-runs gpu_oct runs/
 python analysis/summarize_gpu.py
 
-# 6. Check every number rendered on the page against these files:
+# 3. Check every number on the pages against these files:
 cd web && npm install && npm run build && node scripts/verify-numbers.mjs`}</Pre>
   );
 }
@@ -121,7 +106,6 @@ export function Citation() {
 }
 
 export function MethodsDetails() {
-  const v = DATA.bsum.validation as unknown as { unsteered_prefix_min: number; unsteered_prefix_max: number; n_exact: number; n_rows: number } | undefined;
   return (
     <div className="prose-body text-[0.95rem] leading-relaxed text-ink2">
       <p>
@@ -131,44 +115,24 @@ export function MethodsDetails() {
         outputs the raw residual at the last token, mapped through the head. Its target is the output of block 20 (hidden_states[21]).
       </p>
       <p>
-        <span className="font-medium text-ink">Steering.</span> Δ is normalized and added as α · ‖h‖ · Δ/‖Δ‖ to the output of block 20 at every
-        position, including the prompt. ‖h‖ = {DATA.gallery.norm_ref} is the norm of the layer-20 activation at the last token of a neutral sentence,
-        measured once on the A100. Greedy decoding throughout.
+        <span className="font-medium text-ink">Vectors.</span> For each trait, the vector is the mean Reconstructor output over the positive descriptions
+        minus the mean over the opposite ones. It is normalized and added as α · ‖h‖ · Δ/‖Δ‖ to the output of block 20 at every position, including the
+        prompt, where ‖h‖ = {DATA.gallery.norm_ref} is the norm of the layer-20 activation at the last token of a neutral sentence.
       </p>
       <p>
-        <span className="font-medium text-ink">Reference vectors.</span> The sycophantic, evil and hallucinating vectors were built with the
-        contrastive system-prompt method of Persona Vectors (Chen et al., 2025) as implemented in the ARENA 4.4 exercises: mean
-        response activation under a trait-eliciting system prompt minus the mean under a trait-suppressing one. Row 20 of each saved tensor
-        is the output of block 20. The 13 CAA vectors (experiment 4) are differences of mean response activations over 15 hand-written
-        response pairs each, written by the same authors as the steering texts.
+        <span className="font-medium text-ink">Comparisons.</span> Random directions are Gaussian samples scaled the same way. The plain-Qwen vector
+        averages Qwen2.5-7B-Instruct&apos;s own layer-20 activations over each description&apos;s tokens, positive minus opposite. The standard
+        sycophancy, malice and confabulation vectors were built with the contrastive system-prompt method of Persona Vectors (Chen et al., 2025) as
+        implemented in the ARENA 4.4 exercises; row 20 of each saved tensor is the output of block 20.
       </p>
       <p>
-        <span className="font-medium text-ink">Hardware.</span> The original gallery (August 2026) and the behavior figures (October 2026) ran in bf16 on
-        A100s. The October Reconstructor re-runs behind the Direction and technical sections ran on an Apple M2 Pro laptop in bf16 on the Metal backend,
-        loading one layer at a time (<Code>analysis/ar_stream.py</Code>); its vectors match the A100 vectors to a minimum cosine of{" "}
-        <N p="ar.validation.min_cos" f="d5" /> across all seven concepts, which is why a few cosines differ in the third decimal between the main page&apos;s
-        autoencoder chart (A100) and the Direction section (laptop). An earlier behavior run used an 8-bit copy of the model in llama.cpp on the laptop; llama.cpp adds row
-        <span className="num"> {DATA.layer.best_row}</span> of its control-vector buffer at the output of block {DATA.layer.best_row + 1}, which we confirmed on
-        Qwen2.5-0.5B against an HF forward hook (maximum logit difference <N p={`layer.rows.${DATA.layer.best_row}.max_abs_logit_diff_vs_hf_hook`} f="d2" />,
-        against <N p="layer.unsteered_max_abs_logit_diff" f="d2" /> between the two implementations with no steering at all, and a steering
-        effect of <N p="layer.steering_effect_size_hf" f="d1" />).      </p>
-      <p>
-        <span className="font-medium text-ink">Behavior runs.</span> The main page&apos;s demo and Figures 1 and 2 here come from one run in unquantized bf16 on an A100 rented on Modal,
-        with the notebooks&apos; steering hook (<Code>analysis/gpu_behavior.py</Code>, <Code>serve/modal_batch.py</Code>). Generation is greedy, up to 160
-        tokens, batched across the eleven questions. The plain-Qwen baseline averages Qwen2.5-7B-Instruct&apos;s layer-20 activations over each
-        description&apos;s tokens. Ratings come from Qwen2.5-32B-Instruct, reading the probabilities of the digits 0 to 9 (<Code>analysis/gpu_judge.py</Code>).
-        An earlier version of the yes-or-no test and a sycophancy strength sweep ran on an 8-bit copy of the model on the laptop
-        (<Code>analysis/behavior.py</Code>); their results agree in direction and are kept in <Code>web/public/data/behavior_*.json</Code>.
+        <span className="font-medium text-ink">Runs.</span> All outputs come from one run in unquantized bf16 on an A100 rented on Modal
+        (<Code>analysis/gpu_behavior.py</Code>, <Code>serve/modal_batch.py</Code>), with greedy decoding up to 160 tokens on eleven questions. Ratings
+        come from Qwen2.5-32B-Instruct, reading the probabilities of the digits 0 to 9 (<Code>analysis/gpu_judge.py</Code>).
       </p>
       <p>
-        <span className="font-medium text-ink">CPU hosting.</span> A weight-only int8 copy of the Reconstructor, run on two CPU threads, matches the
-        A100 vectors to a minimum cosine of <N p="int8.min_cos" f="d5" /> and compiles one description pair in <N p="int8.pair_seconds" f="d0" /> seconds on
-        the same laptop (<Code>analysis/check_ar_int8.py</Code>). This is what the live panel&apos;s backend uses when no GPU is available.
-      </p>
-      <p>
-        <span className="font-medium text-ink">Statistics.</span> One run per setting, greedy, no seeds to vary except for random directions.
-        Cosine nulls come from pairs of trait-free texts; probe nulls from 2,000 random unit directions; intervals are percentile bootstraps over
-        responses. Nothing on this page is a significance test across independent replications, because none were run.
+        <span className="font-medium text-ink">Live demo.</span> The model drafts description pairs for the typed phrase from three worked examples,
+        the Reconstructor turns them into a vector, and the steered model answers, all on one GPU on Modal (<Code>serve/modal_live.py</Code>).
       </p>
     </div>
   );

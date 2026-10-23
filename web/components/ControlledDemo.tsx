@@ -40,7 +40,7 @@ export function ControlledDemo({ initial }: { initial: DemoSlice }) {
   const [concept, setConcept] = useState(initial.concept);
   const [pk, setPk] = useState(initial.promptKey);
   const [alpha, setAlpha] = useState(initial.alpha);
-  const [cmp, setCmp] = useState<"direct" | "reference" | "random">("direct");
+  const [cmp, setCmp] = useState<"direct" | "reference" | "random">("random");
   const [failed, setFailed] = useState(false);
   const file = files[concept];
 
@@ -62,7 +62,7 @@ export function ControlledDemo({ initial }: { initial: DemoSlice }) {
     <div className="rounded-xl border border-edge bg-surface p-3 sm:p-5">
       <div role="radiogroup" aria-label="Trait" className="flex flex-wrap gap-1.5">
         {CONCEPTS.map((c) => (
-          <button key={c} role="radio" aria-checked={c === concept} onClick={() => { setConcept(c); if (cmp === "reference" && !REF[c]) setCmp("direct"); }}
+          <button key={c} role="radio" aria-checked={c === concept} onClick={() => { setConcept(c); if (cmp === "reference" && !REF[c]) setCmp("random"); }}
             className={`rounded-full border px-3 py-1 text-sm ${c === concept ? "border-s1 bg-[var(--s1-wash)] font-medium text-ink" : "border-edge text-ink2 hover:border-axis"}`}>
             {LABEL[c]}
           </button>
@@ -89,7 +89,7 @@ export function ControlledDemo({ initial }: { initial: DemoSlice }) {
       <div className="mt-3 flex flex-wrap items-center gap-2 text-xs text-muted">
         <span>Compare with</span>
         <div role="radiogroup" aria-label="Comparison" className="inline-flex overflow-hidden rounded-md border border-edge text-sm">
-          {([["direct", "Qwen reads the descriptions"], ["reference", "Standard vector"], ["random", "Random direction"]] as const).map(([k, l]) => {
+          {([["random", "Random direction"], ["direct", "Qwen reads the descriptions"], ["reference", "Standard vector"]] as const).map(([k, l]) => {
             const disabled = k === "reference" && !REF[concept];
             return (
               <button key={k} role="radio" aria-checked={cmp === k} disabled={disabled} onClick={() => setCmp(k)}

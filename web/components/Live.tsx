@@ -92,7 +92,7 @@ export function Live({ scenarios, prompts }: { scenarios: Record<string, Scen[]>
       await compileWith(ps);
     } catch (e) {
       const m = e instanceof Error ? e.message : String(e);
-      setErr(m === "Failed to fetch" ? "Could not reach the live backend. It may be starting up or over its budget; try again in a minute." : m);
+      setErr(m === "Failed to fetch" ? "Could not reach the live backend. It may be starting up or busy; try again in a minute." : m);
     } finally { timer.stop(); setBusy(""); }
   }
 
