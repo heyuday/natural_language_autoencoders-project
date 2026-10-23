@@ -104,15 +104,16 @@ export function ControlledDemo({ initial }: { initial: DemoSlice }) {
       {failed && !file && <p className="mt-3 text-sm text-ink2">These outputs could not be loaded. Reload the page to try again.</p>}
       {file && (
         <div className="mt-3 grid gap-3 lg:grid-cols-3">
-          <div className="order-first lg:order-none lg:col-start-2"><Panel title={`Vector from our descriptions, strength ${alpha}`} sub="Descriptions compiled by the autoencoder" text={at(`nla:${concept}`)} accent /></div>
+          <div className="order-first lg:order-none lg:col-start-2"><Panel title={`Vector from our descriptions, strength ${alpha}`} sub="Our descriptions, turned into a vector by the Reconstructor" text={at(`nla:${concept}`)} accent /></div>
           <div className="lg:col-start-1 lg:row-start-1"><Panel title="Normal model" text={file.base[pk]} /></div>
           <div><Panel title={`${cmpTitle}, strength ${alpha}`} sub={cmpSub} text={at(cmpKey)} /></div>
         </div>
       )}
       <p className="mt-4 border-t border-edge pt-3 text-xs leading-relaxed text-muted">
         Qwen2.5-7B-Instruct, unquantized (bf16), on an A100, greedy decoding, up to 160 tokens, October 2026. Nothing was added to the prompt;
-        each vector is added after layer 20 at every token. Every output for every trait, question, strength and vector is here. Steered text can be
-        wrong or unpleasant.
+        each vector is added after layer 20 at every token. Every output for every trait, question and strength is here; the random panel shows the first of the five random
+        directions used in the ratings. Variety is the share of distinct word pairs in a reply; low values mean it loops. Steered text can be wrong or
+        unpleasant.
       </p>
     </div>
   );

@@ -7,6 +7,7 @@ const ITEMS = [
   ["method", "How it works"],
   ["autoencoder", "Baseline"],
   ["strength", "Strength"],
+  ["decisions", "Decisions"],
   ["limits", "Limits"],
   ["try", "Try it"],
 ] as const;

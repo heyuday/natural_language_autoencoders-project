@@ -18,15 +18,15 @@ export function PipelineDiagram({ normRef }: { normRef: number }) {
     <div role="img" aria-label="Diagram: two descriptions go through the reconstructor; the difference of its outputs is added to the model's residual stream after block 20 while it answers."
       className="grid items-center gap-2 md:grid-cols-[1.2fr_auto_1fr_auto_0.8fr_auto_1.3fr]">
       <div className="grid gap-2">
-        <Box title="Description of a trait-showing reply" sub="t_pos, written by hand" />
-        <Box title="Description of the opposite reply" sub="t_neg, same scenario" />
+        <Box title="Description of a trait-showing reply" sub="written by us" />
+        <Box title="Description of the opposite reply" sub="same situation" />
       </div>
       <Arrow />
-      <Box tone="model" title="Reconstructor (AR)" sub="first 21 layers of Qwen2.5-7B, fine-tuned, plus a linear head; reads text, outputs a layer-20 activation" />
+      <Box tone="model" title="Reconstructor" sub="reads text, predicts a layer-20 activation of Qwen2.5-7B" />
       <Arrow />
-      <Box tone="vec" title="Δ = AR(t_pos) − AR(t_neg)" sub="averaged over scenarios; 3584 numbers" />
+      <Box tone="vec" title="Difference of the two predictions" sub="averaged over a few pairs; 3584 numbers" />
       <Arrow />
-      <Box title="Add α · ‖h‖ · Δ/‖Δ‖ after block 20" sub={`of Qwen2.5-7B-Instruct, at every token, prompt included. ‖h‖ = ${normRef}, measured once`} />
+      <Box title="Add it to the model after layer 20" sub={`at every token; at strength 1 it is as long as one of the model's own activations (${normRef})`} />
     </div>
   );
 }
